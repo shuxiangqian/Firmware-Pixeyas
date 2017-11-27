@@ -112,6 +112,7 @@
 #include <uORB/topics/commander_state.h>
 #include <uORB/topics/cpuload.h>
 #include <uORB/topics/sonar_distance.h>
+#include <uORB/topics/alt_estimate.h>
 //#include <uORB/topics/alt_ctrl.h>
 
 #include <systemlib/systemlib.h>
@@ -1228,6 +1229,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct cpuload_s cpuload;
 		struct vehicle_gps_position_s dual_gps_pos;
 		struct sonar_distance_s sonar;
+		struct alt_estimate_s alt;
 		//struct alt_ctrl_s alt_control;
 	} buf;
 
@@ -1291,6 +1293,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_RPL6_s log_RPL6;
 			struct log_LOAD_s log_LOAD;
 			struct log_ALT_s log_ALT;
+			struct log_ALT1_s log_ALT1;
 		} body;
 	} log_msg = {
 		LOG_PACKET_HEADER_INIT(0)
@@ -1341,6 +1344,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int commander_state_sub;
 		int cpuload_sub;
 		int sonar_sub;
+		int alt_sub;
 	//	int alt_ctrl_sub;
 	} subs;
 
@@ -1385,6 +1389,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.commander_state_sub = -1;
 	subs.cpuload_sub = -1;
 	subs.sonar_sub = -1;		//sonar
+	subs.alt_sub = -1;
 	//subs.alt_ctrl_sub = -1;
 
 	/* add new topics HERE */
@@ -1853,6 +1858,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 				log_msg.body.log_ATSP.q_x = buf.att_sp.q_d[1];
 				log_msg.body.log_ATSP.q_y = buf.att_sp.q_d[2];
 				log_msg.body.log_ATSP.q_z = buf.att_sp.q_d[3];
+				log_msg.body.log_ATSP.z_sp = buf.att_sp.z_sp;
 				LOGBUFFER_WRITE_AND_COUNT(ATSP);
 			}
 
@@ -2298,18 +2304,18 @@ int sdlog2_thread_main(int argc, char *argv[])
 		if(copy_if_updated(ORB_ID(sonar_distance), &subs.sonar_sub, &buf.sonar))
 		{
 			log_msg.msg_type = LOG_ALT_MSG;
-			//log_msg.body.log_ALT.alt_sp = buf.alt_control.alt_sp;
-			//log_msg.body.log_ALT.alt_measure = buf.alt_control.alt_measure;
-			//log_msg.body.log_ALT.thrust = buf.alt_control.thrust;
-
 			log_msg.body.log_ALT.distance = buf.sonar.distance[0]/100.0f;
-			log_msg.body.log_ALT.status = buf.sonar.status;
+			log_msg.body.log_ALT.distance_fit = buf.sonar.distance_filter/100.0f;
 			LOGBUFFER_WRITE_AND_COUNT(ALT);
+		}
 
-	/*		thrust = buf.alt_control.thrust;
-			alt_sp = buf.alt_control.alt_sp;
-			alt_now = buf.alt_control.alt_measure;
-			count++;	*/
+		/* altitude estimate */
+		if(copy_if_updated(ORB_ID(alt_estimate), &subs.alt_sub, &buf.alt))
+		{
+			log_msg.msg_type = LOG_ALT1_MSG;
+			log_msg.body.log_ALT1.altitude = buf.alt.altitude;
+			log_msg.body.log_ALT1.vel_z = buf.alt.vel_z;
+			LOGBUFFER_WRITE_AND_COUNT(ALT1);
 		}
 
 		/* --- CAMERA TRIGGER --- */

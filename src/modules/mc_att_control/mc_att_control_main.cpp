@@ -89,6 +89,7 @@
 #include <lib/geo/geo.h>
 #include <lib/tailsitter_recovery/tailsitter_recovery.h>
 
+
 /**
  * Multicopter attitude control app start / stop handling function
  *

@@ -76,6 +76,7 @@ struct log_ATSP_s {
 	float q_x;
 	float q_y;
 	float q_z;
+	float z_sp;
 };
 
 /* --- IMU - IMU SENSORS --- */
@@ -641,7 +642,16 @@ struct log_ALT_s
 struct log_ALT_s
 {
 	float distance;
-	bool status;
+	float distance_fit;		//filterd
+	//bool status;
+};
+
+#define LOG_ALT1_MSG 63
+struct log_ALT1_s
+{
+	float altitude;
+	float vel_z;
+	bool flag;
 };
 
 /********** SYSTEM MESSAGES, ID > 0x80 **********/
@@ -674,7 +684,7 @@ struct log_PARM_s {
 static const struct log_format_s log_formats[] = {
 	/* business-level messages, ID < 0x80 */
 	LOG_FORMAT(ATT, "ffffffffff",	"qw,qx,qy,qz,Roll,Pitch,Yaw,RollRate,PitchRate,YawRate"),
-	LOG_FORMAT(ATSP, "ffffffff",		"RollSP,PitchSP,YawSP,ThrustSP,qw,qx,qy,qz"),
+	LOG_FORMAT(ATSP, "fffffffff",		"RollSP,PitchSP,YawSP,ThrustSP,qw,qx,qy,qz,z_sp"),
 	LOG_FORMAT_S(IMU, IMU, "ffffffffffff",		"AccX,AccY,AccZ,GyroX,GyroY,GyroZ,MagX,MagY,MagZ,tA,tG,tM"),
 	LOG_FORMAT_S(IMU1, IMU, "ffffffffffff",		"AccX,AccY,AccZ,GyroX,GyroY,GyroZ,MagX,MagY,MagZ,tA,tG,tM"),
 	LOG_FORMAT_S(IMU2, IMU, "ffffffffffff",		"AccX,AccY,AccZ,GyroX,GyroY,GyroZ,MagX,MagY,MagZ,tA,tG,tM"),
@@ -734,7 +744,8 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(LAND, "B", "Landed"),
 	LOG_FORMAT(LOAD, "f", "CPU"),
 	//LOG_FORMAT(ALT, "fff","alt_sp,alt_now,thrust"),
-	LOG_FORMAT(ALT, "fB","alt,state"),
+	LOG_FORMAT(ALT, "ff","alt,altF"),
+	LOG_FORMAT(ALT1, "ffB","alt,vel_z,state"),
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */
 	LOG_FORMAT(TIME, "Q", "StartTime"),

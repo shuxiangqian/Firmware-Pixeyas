@@ -122,6 +122,7 @@ set(msg_file_names
 	wind_estimate.msg
 	vehicle_roi.msg
 	sonar_distance.msg
+	alt_estimate.msg
 	#alt_ctrl.msg
 	)
 

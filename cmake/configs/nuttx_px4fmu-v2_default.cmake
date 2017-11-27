@@ -124,6 +124,9 @@ set(config_module_list
 	modules/systemlib/mixer
 	modules/uORB
 	modules/dataman
+	
+	# iffpc
+	modules/mc_alt_estimator
 
 	#
 	# Libraries

@@ -130,8 +130,6 @@ int sonargroup_service_main(int argc, char *argv[])
     return(1);
 }
 
-
-
 int sonargroup_service_thread_main(int argc, char *argv[])
 {
     //初始化UARt8
@@ -150,6 +148,11 @@ int sonargroup_service_thread_main(int argc, char *argv[])
     struct sonar_distance_s sonar;
     memset(&sonar, 0, sizeof(sonar));
     sonar.count=0;
+	sonar.distance_down[3]=0;
+	sonar.distance_down[2]=0;
+	sonar.distance_down[1]=0;
+	sonar.distance_down[0]=0;
+	sonar.vz=0.0f;
     //公告主题
     orb_advert_t SonarGroupDistance_pub = orb_advertise(ORB_ID(sonar_distance), &sonar);
 
@@ -159,32 +162,78 @@ int sonargroup_service_thread_main(int argc, char *argv[])
     //获取所有超声波距离 Sonar_group GetRangeAll
     while(!thread_should_exit)
     {
-        SRF01(uart_fd,0,RANGE_CM);
+        SRF01(uart_fd,2,RANGE_CM);
         //wait 70ms to recive the respons
-        usleep(50000);
-        for (int i=1;i<=1;i++)
-        {
-            int range=GetRange_new(uart_fd,i);
-            //printf("[SONAR_GROUP]Range(%d)=%d(cm)\n",i,range);
-            if (range!=-1979)
-            {
-                sonar.distance[i-1]=range;
-                sonar.status[i-1]=1;
-            }
-            else
-            {
-                sonar.status[i-1]=0;
-            }
-        }
-        //caculate time
-        //sonardata.time=hrt_absolute_time()/1000;
-        //count1++;
-        //sonardata.count=count1;
-        sonar.count++;
-        if(sonar.count==6)
-        	sonar.count=1;
+        usleep(10000);
+        SRF01(uart_fd,3,RANGE_CM);
+		//wait 70ms to recive the respons
+		usleep(10000);
+		SRF01(uart_fd,4,RANGE_CM);
+		//wait 70ms to recive the respons
+		usleep(10000);
+		SRF01(uart_fd,5,RANGE_CM);
+		//wait 70ms to recive the respons
+		usleep(10000);
+		SRF01(uart_fd,1,RANGE_CM);
+		//wait 70ms to recive the respons
+		usleep(50000);
 
-        orb_publish(ORB_ID(sonar_distance), SonarGroupDistance_pub, &sonar);
+        sonar.count++;
+
+		for (int i=1;i<=5;i++)
+		{
+			int range=GetRange_new(uart_fd,i);
+			if (range!=-1979)
+			{
+				sonar.distance[i-1]=range;
+				sonar.status[i-1]=1;
+			}
+			else
+			{
+				sonar.distance[i-1]=range;							//add by yly
+				sonar.status[i-1]=0;
+			}
+		}
+
+		sonar.distance_down[3] = sonar.distance_down[2];
+		sonar.distance_down[2] = sonar.distance_down[1];
+		sonar.distance_down[1] = sonar.distance_down[0];
+		sonar.distance_down[0] = sonar.distance[0];
+
+		if(sonar.count>=3)
+		{
+			if(sonar.distance_down[0]<0.0f)
+			{
+				sonar.distance_down[0] = sonar.distance_down[1];
+				sonar.distance_filter = sonar.distance_down[0];
+			}
+			else
+			{
+				float k1=(sonar.distance_down[1]-sonar.distance_down[2])/100.0f;
+				float k2=(sonar.distance_down[0]-sonar.distance_down[1])/100.0f;
+
+				if(k2>0.2f&&k2>3*k1)
+				{
+					sonar.distance_filter = sonar.distance_down[1]+k1*0.2f;
+					sonar.distance_down[0] = sonar.distance_filter;
+				}
+				else if(k2<-0.2f&&k2<3*k1)
+				{
+					sonar.distance_filter = sonar.distance_down[1]+k1*0.2f;
+					sonar.distance_down[0] = sonar.distance_filter;
+				}
+				else
+				{
+					sonar.distance_filter = sonar.distance_down[0];
+				}
+			}
+
+			sonar.vz=0.0f;
+		}
+		else
+			sonar.distance_filter = sonar.distance[0];
+
+		orb_publish(ORB_ID(sonar_distance), SonarGroupDistance_pub, &sonar);
     }
     //关闭线程，串口
     warnx("[SONAR_GROUP] exiting.\n");
@@ -230,7 +279,8 @@ int GetRange_new(int fd_UART,unsigned char Address)
     //发送测距指令
     SRF01(fd_UART,Address,GETRANGE);
     //等待1ms反馈
-    usleep(1000);
+    //usleep(1000);//yly
+    usleep(2000);
 
     //高低位两个字节
     unsigned char hByte,lByte;

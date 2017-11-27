@@ -78,7 +78,7 @@
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/sonar_distance.h>
-//#include <uORB/topics/alt_ctrl.h>
+#include <uORB/topics/alt_estimate.h>
 
 #include <systemlib/systemlib.h>
 #include <systemlib/mavlink_log.h>
@@ -96,15 +96,10 @@
 #define ONE_G	9.8066f
 
 float ref_height1,height1;
-//unsigned int publish_count=0;
 //float thrust1,alt_sp1,alt_now1;
-//uint64_t time1,time,time_cha;
-//uint64_t time1,time2,time_cha;
-//unsigned int count=0;
-//bool flag_auto;
-//float P=0,I=0,D=0;
-//hrt_abstime time_cha,time1,time2;
-//unsigned int count=0;
+uint64_t time1,time2,time_cha;
+unsigned int count1=0;
+
 /**
  * Multicopter position control app start / stop handling function
  *
@@ -154,6 +149,7 @@ private:
 	int		_global_vel_sp_sub;		/**< offboard global velocity setpoint */
 	//IFFPC
 	int 	_sonar_sub;
+	int 	_alt_estimate_sub;
 
 	orb_advert_t	_att_sp_pub;			/**< attitude setpoint publication */
 	orb_advert_t	_local_pos_sp_pub;		/**< vehicle local position setpoint publication */
@@ -174,6 +170,7 @@ private:
 	struct vehicle_local_position_setpoint_s	_local_pos_sp;		/**< vehicle local position setpoint */
 	struct vehicle_global_velocity_setpoint_s	_global_vel_sp;		/**< vehicle global velocity setpoint */
 	struct sonar_distance_s 	sonar;
+	struct alt_estimate_s 		alt;
 	//struct alt_ctrl_s    alt_ctrl_control;
 	//memset(&alt_ctrl_s, 0, sizeof(alt_ctrl_s));
 
@@ -843,125 +840,343 @@ MulticopterPositionControl::limit_pos_sp_offset()
 	}
 }
 
+// PID
+//void
+//MulticopterPositionControl::caculate_thrust(float *thrust)
+//{
+//	static float Integral=0,error_pre=0;
+//	float Proportion=0,Derivative=0,error=0;
+//	static float ref_height;
+//	float height;
+//	static bool flag_auto_first=true;		//first
+//	static float current_thrust;
+//	static float thrust_pre;
+//	static float height_pre;
+//	static float range=0.17f;
+//
+//	//struct alt_ctrl_s    alt_ctrl_control;
+//	//memset(&alt_ctrl_control, 0, sizeof(alt_ctrl_control));
+//	//orb_advert_t  _alt_ctrl_pub = orb_advertise(ORB_ID(alt_ctrl), &alt_ctrl_control);		/*publish altitude control data*/
+//
+//	bool updated;
+//	orb_check(_sonar_sub, &updated);
+//	if(updated)
+//	{
+//		time1=hrt_absolute_time()/1000;
+//		time_cha=time1-time2;
+//		time2=time1;
+//		count++;
+//
+//		orb_copy(ORB_ID(sonar_distance), _sonar_sub, &sonar);
+//	}
+//
+//	if(_manual.z<0.5f||_manual.z>0.5f)		//manual control
+//	{
+//		*thrust=_manual.z;
+//		if(*thrust>0.8f)
+//			*thrust=0.8f;
+//		//flag_auto_altitude=false;
+//		ref_height=sonar.distance[0]/100.0f;
+//		ref_height1=ref_height;		//debug
+//		current_thrust=*thrust;
+//		error_pre=0;
+//		flag_auto_first=true;
+//		height_pre=ref_height;
+//		//alt_ctrl.alt_sp = ref_height;
+//		//alt_ctrl.alt_measure = ref_height;
+//	}
+//	else			//auto altitude control
+//	{
+//		if(flag_auto_first)
+//		{
+//			flag_auto_first=false;
+//			Proportion=0;
+//			Derivative=0;
+//			Integral=current_thrust;
+//			*thrust=Integral;
+//			thrust_pre=*thrust;
+//		}
+//		else
+//		{
+//			if(updated)
+//			{
+//				height=sonar.distance[0]/100.0f;
+//				height1=height;			//debug
+//				if((height-height_pre)>range||(height-height_pre)<-range)		//noise. use last data
+//				{
+//					height=height_pre;
+//					range=0.3f;
+//				}
+//				else
+//				{
+//					range=0.18f;
+//				}
+//				error=ref_height-height;
+//
+//				Proportion=_params.pos_p(2)*error;
+//				Integral+=_params.vel_i(2)*error;
+//				Derivative=_params.vel_d(2)*(error-error_pre);
+//
+//				if(Integral>0.69f)
+//					Integral=0.69f;
+//
+//				if(Integral<0.45f)
+//					Integral=0.45f;
+//
+//				*thrust=Proportion+Integral+Derivative;
+//
+//				if(*thrust>0.8f)
+//					*thrust=0.8f;
+//				else if(*thrust<0.43f)
+//					*thrust=0.43f;
+//
+//				error_pre=error;
+//				thrust_pre=*thrust;
+//
+//				height_pre=height;
+//
+//				//alt_ctrl_s.alt_measure = height;
+//				//alt_ctrl_s.alt_sp = ref_height;
+//
+//				/*	if(_alt_ctrl_pub!=nullptr)
+//				{
+//					orb_publish(ORB_ID(alt_ctrl),&_alt_ctrl_pub, &alt_ctrl_control);
+//				}
+//				else
+//				{
+//					_alt_ctrl_pub=orb_advertise(ORB_ID(alt_ctrl), &alt_ctrl_control);
+//				}	*/
+//			}
+//			else
+//			{
+//				*thrust=thrust_pre;
+//			}
+//		}
+//	}
+//
+//}
+//  feng xiaoke
+//void
+//MulticopterPositionControl::caculate_thrust(float *thrust)
+//{
+//	float error=0;
+//	float height;
+//	static float Integral=0,error_pre=0;
+//	static float ref_height;
+//	static bool flag_auto_first=true;		//first
+//	static float current_thrust;
+//	static float thrust_pre;
+//	//static float height_pre ;
+//	//static float range=0.17f;
+//	static float u0 = 0.0f;					//平衡点推力
+//	static int count = 0;
+//
+//	bool updated;
+//	//orb_check(_sonar_sub, &updated);
+//	orb_check(_alt_estimate_sub, &updated);
+//
+//	if(updated)
+//	{
+////		time1=hrt_absolute_time()/1000;
+////		time_cha=time1-time2;
+////		time2=time1;
+////		count++;
+//
+//		orb_copy(ORB_ID(alt_estimate), _alt_estimate_sub, &alt);
+//	}
+//
+//	if(_manual.z<0.5f||_manual.z>0.5f)		//manual control
+//	{
+//		*thrust=_manual.z;
+//		if(*thrust>0.88f)
+//			*thrust=0.88f;
+//		//ref_height=sonar.distance[0]/100.0f;
+//		ref_height = alt.altitude;
+//		//ref_height1=ref_height;		//debug
+//		current_thrust = *thrust;
+//		error_pre = 0;
+//		flag_auto_first = true;
+//		//height_pre = ref_height;
+//		Integral = 0;
+//	}
+//	else			//auto altitude control
+//	{
+//		if(flag_auto_first)
+//		{
+//			flag_auto_first=false;
+//			*thrust=current_thrust;
+//			thrust_pre=*thrust;
+//			u0 = current_thrust;
+//		}
+//		else
+//		{
+//			if(updated)
+//			{
+//				count++;
+//				if(count==14)
+//					count = 0;
+//				//height=sonar.distance[0]/100.0f;
+//				height = alt.altitude;
+//				//height1=height;			//debug
+//				error=ref_height-height;
+//
+//				Integral+=_params.pos_p(2)*error;
+//				if(Integral>0.15f)
+//					Integral = 0.15f;
+//				else if(Integral<-0.15f)
+//					Integral = -0.15f;
+//
+//				// uk = -0.02u(k-1)+5.32e(k)-4.68e(k-1)
+//				//*thrust=Proportion+Integral+Derivative;
+//				if(count == 0)
+//				{
+//					*thrust = u0-_params.vel_p(2)*thrust_pre+_params.vel_i(2)*error-_params.vel_d(2)*error_pre+Integral;
+//				}
+//				else
+//				{
+//					*thrust = thrust_pre;
+//				}
+//
+//				if(*thrust>0.88f)
+//					*thrust=0.88f;
+//				else if(*thrust<0.5f)
+//					*thrust=0.5f;
+//
+//				error_pre=error;
+//				thrust_pre=*thrust;
+//
+//				//height_pre = height;
+//
+//				_att_sp.z_sp = ref_height;
+//
+//			}
+//			else
+//			{
+//				*thrust=thrust_pre;
+//			}
+//		}
+//	}
+//
+//}
+
 void
 MulticopterPositionControl::caculate_thrust(float *thrust)
 {
-	static float Integral=0,error_pre=0;
-	float Proportion=0,Derivative=0,error=0;
-	static float ref_height;
+	float error=0;
 	float height;
+	static float Integral=0,error_pre=0;
+	static float ref_height;
 	static bool flag_auto_first=true;		//first
 	static float current_thrust;
 	static float thrust_pre;
-	static float height_pre;
-	static float range=0.17f;
+	static float u0 = 0.0f;					//平衡点推力
+	static int count = 0;
+	static bool ctrl_flag = false,alt_flag = false;
+	float P,D;		//比例、微分项
 
-	//struct alt_ctrl_s    alt_ctrl_control;
-	//memset(&alt_ctrl_control, 0, sizeof(alt_ctrl_control));
-	//orb_advert_t  _alt_ctrl_pub = orb_advertise(ORB_ID(alt_ctrl), &alt_ctrl_control);		/*publish altitude control data*/
+	bool updated;		// estimate
+	bool updated1;		// sonar
 
-	bool updated;
-	orb_check(_sonar_sub, &updated);
+	orb_check(_sonar_sub, &updated1);
+	if(updated1)
+	{
+		orb_copy(ORB_ID(sonar_distance), _sonar_sub, &sonar);
+	}
+	orb_check(_alt_estimate_sub, &updated);
 	if(updated)
 	{
-		/*time1=hrt_absolute_time()/1000;
-		time_cha=time1-time2;
-		time2=time1;
-		count++;	*/
+		orb_copy(ORB_ID(alt_estimate), _alt_estimate_sub, &alt);
+		if(alt.flag == true)
+		{
+			ctrl_flag = true;
+			alt_flag = true;
+			count = 0;
+		}
+		else
+		{
+			alt_flag = false;
+			ctrl_flag = false;
+			count++;
+			if(count == 10)
+			{
+				ctrl_flag = true;
 
-		orb_copy(ORB_ID(sonar_distance), _sonar_sub, &sonar);
+			}
+		}
 	}
 
 	if(_manual.z<0.5f||_manual.z>0.5f)		//manual control
 	{
-		*thrust=_manual.z;
-		if(*thrust>0.8f)
-			*thrust=0.8f;
-		//flag_auto_altitude=false;
-		ref_height=sonar.distance[0]/100.0f;
-		ref_height1=ref_height;		//debug
-		current_thrust=*thrust;
-		error_pre=0;
-		flag_auto_first=true;
-		height_pre=ref_height;
-		//alt_ctrl.alt_sp = ref_height;
-		//alt_ctrl.alt_measure = ref_height;
+		*thrust = _manual.z;
+		if(*thrust>0.88f)
+			*thrust=0.88f;
+		ref_height = sonar.distance_filter*0.01f;
+		//ref_height = alt.altitude;
+		ref_height1 = ref_height;		//debug
+		current_thrust = *thrust;
+		error_pre = 0;
+		flag_auto_first = true;
+		Integral = 0;
 	}
 	else			//auto altitude control
 	{
 		if(flag_auto_first)
 		{
-			flag_auto_first=false;
-			Proportion=0;
-			Derivative=0;
-			Integral=current_thrust;
-			*thrust=Integral;
-			thrust_pre=*thrust;
+			flag_auto_first = false;
+			*thrust = current_thrust;
+			thrust_pre = *thrust;
+			u0 = current_thrust;
 		}
 		else
 		{
-			if(updated)
+			if(ctrl_flag == true)
 			{
-				height=sonar.distance[0]/100.0f;
-				height1=height;			//debug
-				if((height-height_pre)>range||(height-height_pre)<-range)		//noise. use last data
+				if(alt_flag == true)
 				{
-					height=height_pre;
-					range=0.3f;
+					height = alt.alt_with_sonar;
 				}
 				else
 				{
-					range=0.18f;
+					height  = alt.altitude;
 				}
+				//height1 = height;			//debug
 				error=ref_height-height;
 
-				Proportion=_params.pos_p(2)*error;
 				Integral+=_params.vel_i(2)*error;
-				Derivative=_params.vel_d(2)*(error-error_pre);
+				if(Integral>0.1f)
+					Integral = 0.1f;
+				else if(Integral<-0.1f)
+					Integral = -0.1f;
 
-				if(Integral>0.69f)
-					Integral=0.69f;
+				P = _params.vel_p(2)*error;
+				D = _params.vel_d(2)*(error-error_pre);
 
-				if(Integral<0.45f)
-					Integral=0.45f;
+//				if(D > 0.03f)
+//					D = 0.03f;
+//				else if(D < -0.03f)
+//					D = -0.03f;
+				//*thrust = u0-_params.vel_p(2)*thrust_pre+_params.vel_i(2)*error-_params.vel_d(2)*error_pre+Integral;
 
-				*thrust=Proportion+Integral+Derivative;
+				*thrust = u0+P+Integral+D;
 
-				if(*thrust>0.8f)
-					*thrust=0.8f;
-				else if(*thrust<0.43f)
-					*thrust=0.43f;
+				if(*thrust>0.95f)
+					*thrust = 0.95f;
+				else if(*thrust<0.6f)
+					*thrust = 0.6f;
 
-				error_pre=error;
-				thrust_pre=*thrust;
+				error_pre = error;
+				thrust_pre = *thrust;
 
-				height_pre=height;
+				_att_sp.z_sp = ref_height;
 
-				//alt_ctrl_s.alt_measure = height;
-				//alt_ctrl_s.alt_sp = ref_height;
-
-				/*	if(_alt_ctrl_pub!=nullptr)
-				{
-					orb_publish(ORB_ID(alt_ctrl),&_alt_ctrl_pub, &alt_ctrl_control);
-				}
-				else
-				{
-					_alt_ctrl_pub=orb_advertise(ORB_ID(alt_ctrl), &alt_ctrl_control);
-				}	*/
 			}
 			else
 			{
-				*thrust=thrust_pre;
+				*thrust = thrust_pre;
 			}
 		}
 	}
-
-
-	/*P=_params.pos_p(2);
-	I=_params.vel_i(2);
-	D=_params.vel_d(2);	*/
 }
-
 void
 MulticopterPositionControl::control_manual(float dt)
 {
@@ -1395,6 +1610,7 @@ MulticopterPositionControl::task_main()
 	_local_pos_sp_sub = orb_subscribe(ORB_ID(vehicle_local_position_setpoint));
 	_global_vel_sp_sub = orb_subscribe(ORB_ID(vehicle_global_velocity_setpoint));
 	_sonar_sub = orb_subscribe(ORB_ID(sonar_distance));
+	_alt_estimate_sub = orb_subscribe(ORB_ID(alt_estimate));
 
 	parameters_update(true);
 
@@ -2430,7 +2646,7 @@ int mc_pos_control_main(int argc, char *argv[])
 						orb_copy(ORB_ID(vehicle_rates_setpoint), v_rates_sp_sub, &v_rates_sp);
 
 						//warnx("PID: [P=%.3f,I=%.3f,D=%.3f]", (double)P,(double)I,(double)D);
-						//warnx("Debug:time=%lld count=%d",time_cha,count);
+						//warnx("Debug:time=%lld count=%d",time_cha,count1);
 						//warnx("publish_count=%d",publish_count);
 						//warnx("thrust=%.2f alt_sp=%.2f alt_now=%.2f",(double)thrust1,(double)alt_sp1,(double)alt_now1);
 						warnx("Alt:ref_height=%.2f,height=%.2f",(double)ref_height1,(double)height1);

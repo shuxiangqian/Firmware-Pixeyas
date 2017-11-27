@@ -88,7 +88,7 @@ int px4_simple_app_main(int argc, char *argv[])
 
 	int error_counter = 0;
 
-	for (int i = 0; i < 200; i++)
+	for (int i = 0; i < 1000; i++)
 	{
 		/* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
 		int poll_ret = px4_poll(fds, 1, 70);
@@ -120,23 +120,18 @@ int px4_simple_app_main(int argc, char *argv[])
 				//orb_copy(ORB_ID(alt_ctrl), alt_ctrl_sub_, &alt_control);
 
 				//printf("----------------------------------\n");
-				for(int j=1;j<=1;j++)
+				for(int j=1;j<=5;j++)
 				{
 					printf("[SONAR]Range(%d)=%d(cm)\n",j,sonar.distance[j-1]);
-					printf("[SONAR]status(%d)=%d\n",j,sonar.status[j-1]);
+					printf("[SONAR]status(%d)=%d\n\n",j,sonar.status[j-1]);
 					//warnx("[SD] thrust=%.2f alt_sp=%.2f alt_now=%.2f",(double)alt_control.thrust,(double)alt_control.alt_sp,(double)alt_control.alt_measure);
-					printf("=========Press CTRL+C to abort=========\n");
+
 				}
+				printf("=========Press CTRL+C to abort=========\n");
 
 				//orb_copy(ORB_ID(manual_control_setpoint),sensor_sub_fd,&manual);
 				//warnx("manual:x=%.2f,y=%.2f,z=%.2f",(double)manual.x,(double)manual.y,(double)manual.z);
 				//warnx("=========Press CTRL+C to abort=========\n");
-				/* set att and publish this information for other apps
-				 the following does not have any meaning, it's just an example
-				*/
-				/*att.q[0] = raw.accelerometer_m_s2[0];
-				att.q[1] = raw.accelerometer_m_s2[1];
-				att.q[2] = raw.accelerometer_m_s2[2];	*/
 
 				//orb_publish(ORB_ID(vehicle_attitude), att_pub, &att);
 			}
@@ -159,7 +154,7 @@ int px4_simple_app_main(int argc, char *argv[])
 				break;
 			}
 		}
-		usleep(500000);
+		usleep(400000);
 	}
 
 	PX4_INFO("exiting");

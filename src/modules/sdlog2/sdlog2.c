@@ -312,6 +312,8 @@ sdlog2_usage(const char *reason)
 		 "\t-x\tExtended logging");
 }
 
+//distance_sensor_s
+
 /**
  * The logger deamon app only briefly exists to start
  * the background job. The stack size assigned in the
@@ -1211,7 +1213,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct vehicle_global_velocity_setpoint_s global_vel_sp;
 		struct battery_status_s battery;
 		//struct telemetry_status_s telemetry;
-		//struct distance_sensor_s distance_sensor;
+		struct distance_sensor_s distance_sensor;
 		struct estimator_status_s estimator_status;
 		struct tecs_status_s tecs_status;
 		struct system_power_s system_power;
@@ -1261,7 +1263,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_ESC_s log_ESC;
 			struct log_GVSP_s log_GVSP;
 			struct log_BATT_s log_BATT;
-			//struct log_DIST_s log_DIST;
+			struct log_DIST_s log_DIST;
 			//struct log_TEL_s log_TEL;
 			struct log_EST0_s log_EST0;
 			struct log_EST1_s log_EST1;
@@ -1328,7 +1330,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int global_vel_sp_sub;
 		int battery_sub;
 		//int telemetry_subs[ORB_MULTI_MAX_INSTANCES];
-		//int distance_sensor_sub;
+		int distance_sensor_sub;
 		int estimator_status_sub;
 		int tecs_status_sub;
 		int system_power_sub;
@@ -1373,7 +1375,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.esc_sub = -1;
 	subs.global_vel_sp_sub = -1;
 	subs.battery_sub = -1;
-	//subs.distance_sensor_sub = -1;
+	subs.distance_sensor_sub = -1;
 	subs.estimator_status_sub = -1;
 	subs.tecs_status_sub = -1;
 	subs.system_power_sub = -1;
@@ -2137,15 +2139,18 @@ int sdlog2_thread_main(int argc, char *argv[])
 //			}
 
 			/* --- DISTANCE SENSOR --- */
-//			if (copy_if_updated(ORB_ID(distance_sensor), &subs.distance_sensor_sub, &buf.distance_sensor)) {
-//				log_msg.msg_type = LOG_DIST_MSG;
+			if (copy_if_updated(ORB_ID(distance_sensor), &subs.distance_sensor_sub, &buf.distance_sensor)) {
+				log_msg.msg_type = LOG_DIST_MSG;
 //				log_msg.body.log_DIST.id = buf.distance_sensor.id;
 //				log_msg.body.log_DIST.type = buf.distance_sensor.type;
 //				log_msg.body.log_DIST.orientation = buf.distance_sensor.orientation;
-//				log_msg.body.log_DIST.current_distance = buf.distance_sensor.current_distance;
-//				log_msg.body.log_DIST.covariance = buf.distance_sensor.covariance;
-//				LOGBUFFER_WRITE_AND_COUNT(DIST);
-//			}
+				log_msg.body.log_DIST.distance[0] = buf.distance_sensor.distance[0];
+				log_msg.body.log_DIST.distance[1] = buf.distance_sensor.distance[1];
+				log_msg.body.log_DIST.distance[2] = buf.distance_sensor.distance[2];
+				log_msg.body.log_DIST.distance[3] = buf.distance_sensor.distance[3];
+				//log_msg.body.log_DIST.covariance = buf.distance_sensor.covariance;
+				LOGBUFFER_WRITE_AND_COUNT(DIST);
+			}
 
 			/* --- ESTIMATOR STATUS --- */
 			if (copy_if_updated(ORB_ID(estimator_status), &subs.estimator_status_sub, &buf.estimator_status)) {
@@ -2304,7 +2309,11 @@ int sdlog2_thread_main(int argc, char *argv[])
 		if(copy_if_updated(ORB_ID(sonar_distance), &subs.sonar_sub, &buf.sonar))
 		{
 			log_msg.msg_type = LOG_ALT_MSG;
-			log_msg.body.log_ALT.distance = buf.sonar.distance[0]/100.0f;
+			log_msg.body.log_ALT.distance[0] = buf.sonar.distance[0]/100.0f;
+			log_msg.body.log_ALT.distance[1] = buf.sonar.distance[1]/100.0f;
+			log_msg.body.log_ALT.distance[2] = buf.sonar.distance[2]/100.0f;
+			log_msg.body.log_ALT.distance[3] = buf.sonar.distance[3]/100.0f;
+			log_msg.body.log_ALT.distance[4] = buf.sonar.distance[4]/100.0f;
 			log_msg.body.log_ALT.distance_fit = buf.sonar.distance_filter/100.0f;
 			LOGBUFFER_WRITE_AND_COUNT(ALT);
 		}

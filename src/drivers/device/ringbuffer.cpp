@@ -415,6 +415,7 @@ RingBuffer::print_info(const char *name)
 	       _head,
 	       _tail,
 	       _buf);
+
 }
 
 } // namespace ringbuffer

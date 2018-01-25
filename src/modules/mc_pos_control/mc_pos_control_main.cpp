@@ -1080,6 +1080,10 @@ MulticopterPositionControl::caculate_thrust(float *thrust)
 	orb_check(_sonar_sub, &updated1);
 	if(updated1)
 	{
+		time1=hrt_absolute_time()/1000;
+		time_cha=time1-time2;
+		time2=time1;
+		count1++;
 		orb_copy(ORB_ID(sonar_distance), _sonar_sub, &sonar);
 	}
 	orb_check(_alt_estimate_sub, &updated);
@@ -1108,8 +1112,8 @@ MulticopterPositionControl::caculate_thrust(float *thrust)
 	if(_manual.z<0.5f||_manual.z>0.5f)		//manual control
 	{
 		*thrust = _manual.z;
-		if(*thrust>0.88f)
-			*thrust=0.88f;
+		if(*thrust>0.95f)
+			*thrust=0.95f;
 		ref_height = sonar.distance_filter*0.01f;
 		//ref_height = alt.altitude;
 		ref_height1 = ref_height;		//debug
@@ -2646,7 +2650,7 @@ int mc_pos_control_main(int argc, char *argv[])
 						orb_copy(ORB_ID(vehicle_rates_setpoint), v_rates_sp_sub, &v_rates_sp);
 
 						//warnx("PID: [P=%.3f,I=%.3f,D=%.3f]", (double)P,(double)I,(double)D);
-						//warnx("Debug:time=%lld count=%d",time_cha,count1);
+						warnx("Debug:time=%lld count=%d",time_cha,count1);
 						//warnx("publish_count=%d",publish_count);
 						//warnx("thrust=%.2f alt_sp=%.2f alt_now=%.2f",(double)thrust1,(double)alt_sp1,(double)alt_now1);
 						warnx("Alt:ref_height=%.2f,height=%.2f",(double)ref_height1,(double)height1);

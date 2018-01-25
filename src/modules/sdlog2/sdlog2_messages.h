@@ -41,6 +41,10 @@
  * @author Roman Bapst <roman@px4.io>
  */
 
+
+// DIST
+
+
 #ifndef SDLOG2_MESSAGES_H_
 #define SDLOG2_MESSAGES_H_
 
@@ -300,14 +304,14 @@ struct log_BATT_s {
 };
 
 /* --- DIST - RANGE SENSOR DISTANCE --- */
-//#define LOG_DIST_MSG 21
-//struct log_DIST_s {
-//	uint8_t id;
-//	uint8_t type;
-//	uint8_t orientation;
-//	float current_distance;
-//	float covariance;
-//};
+#define LOG_DIST_MSG 21
+struct log_DIST_s {
+	//uint8_t id;
+	//uint8_t type;
+	//uint8_t orientation;
+	float distance[4];
+	//float covariance;
+};
 
 /* LOG IMU1 and IMU2 MSGs consume IDs 22 and 23 */
 
@@ -638,15 +642,15 @@ struct log_ALT_s
 };	*/
 
 
-#define LOG_ALT_MSG 62
+#define LOG_ALT_MSG 62		// raw sonar data
 struct log_ALT_s
 {
-	float distance;
+	float distance[5];
 	float distance_fit;		//filterd
 	//bool status;
 };
 
-#define LOG_ALT1_MSG 63
+#define LOG_ALT1_MSG 63		// altitude estimate
 struct log_ALT1_s
 {
 	float altitude;
@@ -710,7 +714,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(ESC, "HBBBHHffiffH",		"count,nESC,Conn,N,Ver,Adr,Volt,Amp,RPM,Temp,SetP,SetPRAW"),
 	LOG_FORMAT(GVSP, "fff",			"VX,VY,VZ"),
 	LOG_FORMAT(BATT, "ffffffB",		"V,VFilt,C,CFilt,Discharged,Remaining,Warning"),
-	//LOG_FORMAT(DIST, "BBBff",			"Id,Type,Orientation,Distance,Covariance"),
+	LOG_FORMAT(DIST, "ffff",		"alt1,alt2,alt3,alt4"),
 	//LOG_FORMAT_S(TEL0, TEL, "BBBBHHBQ",		"RSSI,RemRSSI,Noise,RemNoise,RXErr,Fixed,TXBuf,HbTime"),
 	//LOG_FORMAT_S(TEL1, TEL, "BBBBHHBQ",		"RSSI,RemRSSI,Noise,RemNoise,RXErr,Fixed,TXBuf,HbTime"),
 	//LOG_FORMAT_S(TEL2, TEL, "BBBBHHBQ",		"RSSI,RemRSSI,Noise,RemNoise,RXErr,Fixed,TXBuf,HbTime"),
@@ -744,7 +748,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(LAND, "B", "Landed"),
 	LOG_FORMAT(LOAD, "f", "CPU"),
 	//LOG_FORMAT(ALT, "fff","alt_sp,alt_now,thrust"),
-	LOG_FORMAT(ALT, "ff","alt,altF"),
+	LOG_FORMAT(ALT, "ffffff","alt0,alt1,alt2,alt3,alt4,altF"),
 	LOG_FORMAT(ALT1, "ffB","alt,vel_z,state"),
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */

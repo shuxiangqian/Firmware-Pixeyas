@@ -44,6 +44,9 @@
  * @author Sander Smeets	<sander@droneslab.com>
  */
 
+// arming failed
+
+
 #include <cmath>	// NAN
 
 /* commander module headers */
@@ -636,6 +639,7 @@ transition_result_t arm_disarm(bool arm, orb_advert_t *mavlink_log_pub_local, co
 
 		mavlink_log_critical(mavlink_log_pub_local, "HIL platform: Connect to simulator before arming");
 		return TRANSITION_DENIED;
+//		return TRANSITION_CHANGED;
 	}
 
 	// Transition the armed state. By passing mavlink_log_pub to arming_state_transition it will
@@ -659,6 +663,7 @@ transition_result_t arm_disarm(bool arm, orb_advert_t *mavlink_log_pub_local, co
 	}
 
 	return arming_res;
+//	return TRANSITION_CHANGED;
 }
 
 bool handle_command(struct vehicle_status_s *status_local, const struct safety_s *safety_local,

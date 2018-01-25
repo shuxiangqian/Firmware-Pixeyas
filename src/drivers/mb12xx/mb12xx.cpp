@@ -76,7 +76,7 @@
 
 /* Configuration Constants */
 #define MB12XX_BUS 		PX4_I2C_BUS_EXPANSION
-#define MB12XX_BASEADDR 	0x70 /* 7-bit address. 8-bit address is 0xE0 */
+#define MB12XX_BASEADDR 	0x70 /* 7-bit address. 8-bit address is 0xE0 */ //default 0x70
 #define MB12XX_DEVICE_PATH	"/dev/mb12xx"
 
 /* MB12xx Registers addresses */
@@ -89,13 +89,15 @@
 #define MB12XX_MIN_DISTANCE 	(0.20f)
 #define MB12XX_MAX_DISTANCE 	(7.65f)
 
-#define MB12XX_CONVERSION_INTERVAL 	100000 /* 60ms for one sonar */
-#define TICKS_BETWEEN_SUCCESIVE_FIRES 	100000 /* 30ms between each sonar measurement (watch out for interference!) */
+#define MB12XX_CONVERSION_INTERVAL 	70000 /* 60ms for one sonar */
+#define TICKS_BETWEEN_SUCCESIVE_FIRES 	15000 /* 10ms between each sonar measurement (watch out for interference!) */
 
 #ifndef CONFIG_SCHED_WORKQUEUE
 # error This requires CONFIG_SCHED_WORKQUEUE.
 #endif
 
+//debug
+//unsigned int count_debug = 0;
 class MB12XX : public device::I2C
 {
 public:
@@ -124,9 +126,10 @@ private:
 	int					_measure_ticks;
 	bool				_collect_phase;
 	int				_class_instance;
-	int				_orb_class_instance;
+	int				_orb_class_instance0;
+	//int 			_orb_class_instance1;
 
-	orb_advert_t		_distance_sensor_topic;
+	orb_advert_t		_distance_sensor_topic0,_distance_sensor_topic1;
 
 	perf_counter_t		_sample_perf;
 	perf_counter_t		_comms_errors;
@@ -139,6 +142,8 @@ private:
 	std::vector<float>
 	_latest_sonar_measurements; /* vector to store latest sonar measurements in before writing to report */
 
+
+	struct distance_sensor_s report;
 
 	/**
 	* Test whether the device supported by the driver is present at a
@@ -178,7 +183,7 @@ private:
 	*/
 	void				cycle();
 	int					measure();
-	int					collect();
+	int					collect(uint8_t);
 	/**
 	* Static trampoline from the workq context; because we don't have a
 	* generic workq wrapper yet.
@@ -204,8 +209,10 @@ MB12XX::MB12XX(int bus, int address) :
 	_measure_ticks(0),
 	_collect_phase(false),
 	_class_instance(-1),
-	_orb_class_instance(-1),
-	_distance_sensor_topic(nullptr),
+	_orb_class_instance0(-1),
+//	_orb_class_instance1(-1),
+	_distance_sensor_topic0(nullptr),
+//	_distance_sensor_topic1(nullptr),
 	_sample_perf(perf_alloc(PC_ELAPSED, "mb12xx_read")),
 	_comms_errors(perf_alloc(PC_COUNT, "mb12xx_com_err")),
 	_buffer_overflows(perf_alloc(PC_COUNT, "mb12xx_buf_of")),
@@ -266,12 +273,21 @@ MB12XX::init()
 	/* get a publish handle on the range finder topic */
 	struct distance_sensor_s ds_report = {};
 
-	_distance_sensor_topic = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
-				 &_orb_class_instance, ORB_PRIO_LOW);
+//	_distance_sensor_topic = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
+//				 &_orb_class_instance, ORB_PRIO_LOW);
+	_distance_sensor_topic0 = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
+					 &_orb_class_instance0, ORB_PRIO_DEFAULT);
 
-	if (_distance_sensor_topic == nullptr) {
+//	_distance_sensor_topic1 = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
+//					 &_orb_class_instance1, ORB_PRIO_DEFAULT);
+
+	if (_distance_sensor_topic0 == nullptr) {
 		DEVICE_LOG("failed to create distance_sensor object. Did you start uOrb?");
 	}
+
+//	if (_distance_sensor_topic1 == nullptr) {
+//			DEVICE_LOG("failed to create distance_sensor object. Did you start uOrb?");
+//		}
 
 	// XXX we should find out why we need to wait 200 ms here
 	usleep(200000);
@@ -507,7 +523,7 @@ MB12XX::read(struct file *filp, char *buffer, size_t buflen)
 		usleep(_cycling_rate * 2);
 
 		/* run the collection phase */
-		if (OK != collect()) {
+		if (OK != collect(_cycle_counter)) {
 			ret = -EIO;
 			break;
 		}
@@ -547,9 +563,12 @@ MB12XX::measure()
 }
 
 int
-MB12XX::collect()
+MB12XX::collect(uint8_t index_count_)
 {
 	int	ret = -EIO;
+
+	//static uint64_t count0 = 0,count1 = 0;
+	static uint64_t count0 = 0;
 
 	/* read from the sensor */
 	uint8_t val[2] = {0, 0};
@@ -568,20 +587,43 @@ MB12XX::collect()
 	uint16_t distance_cm = val[0] << 8 | val[1];
 	float distance_m = float(distance_cm) * 1e-2f;
 
-	struct distance_sensor_s report;
+//	struct distance_sensor_s report1;
+
 	report.timestamp = hrt_absolute_time();
 	report.type = distance_sensor_s::MAV_DISTANCE_SENSOR_ULTRASOUND;
 	report.orientation = 8;
-	report.current_distance = distance_m;
 	report.min_distance = get_minimum_distance();
 	report.max_distance = get_maximum_distance();
 	report.covariance = 0.0f;
-	/* TODO: set proper ID */
 	report.id = 0;
-
-	/* publish it, if we are the primary */
-	if (_distance_sensor_topic != nullptr) {
-		orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic, &report);
+//	report.count = count0;
+	if((MB12XX_BASEADDR - index_count_) == 0)
+	{
+		//report.current_distance = distance_m;
+		report.distance[0] = distance_m;
+		/* publish it, if we are the primary */
+	}
+	else if((MB12XX_BASEADDR - index_count_) == 1)
+	{
+		report.distance[1] = distance_m;
+	}
+	else if((MB12XX_BASEADDR - index_count_) == 2)
+	{
+		report.distance[2] = distance_m;
+	}
+	else if((MB12XX_BASEADDR - index_count_) == 3)
+	{
+		count0++;
+		report.count = count0;
+		report.distance[3] = distance_m;
+		//report.current_distance[1] = distance_m;
+//		/* publish it, if we are the primary */
+//		if (_distance_sensor_topic1 != nullptr) {
+//			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic1, &report1);
+//		}
+		if (_distance_sensor_topic0 != nullptr) {
+			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0, &report);
+		}
 	}
 
 	if (_reports->force(&report)) {
@@ -651,7 +693,7 @@ MB12XX::cycle()
 		set_address(_index_counter);
 
 		/* perform collection */
-		if (OK != collect()) {
+		if (OK != collect(_index_counter)) {
 			DEVICE_DEBUG("collection error");
 			/* if error restart the measurement state machine */
 			start();
@@ -668,10 +710,14 @@ MB12XX::cycle()
 			_cycle_counter = 0;
 		}
 
+
+
 		/* Is there a collect->measure gap? Yes, and the timing is set equal to the cycling_rate
 		   Otherwise the next sonar would fire without the first one having received its reflected sonar pulse */
 
 		if (_measure_ticks > USEC2TICK(_cycling_rate)) {
+
+			//count_debug ++;
 
 			/* schedule a fresh cycle call when we are ready to measure again */
 			work_queue(HPWORK,
@@ -693,9 +739,13 @@ MB12XX::cycle()
 	if (OK != measure()) {
 		DEVICE_DEBUG("measure error sonar adress %d", _index_counter);
 	}
+	// debug  代码会执行到这里！
+//	count_debug ++;
 
 	/* next phase is collection */
 	_collect_phase = true;
+
+	usleep(22000);
 
 	/* schedule a fresh cycle call when the measurement is done */
 	work_queue(HPWORK,
@@ -822,18 +872,18 @@ test()
 	warnx("time:        %llu", report.timestamp);
 
 	/* start the sensor polling at 2Hz */
-	if (OK != ioctl(fd, SENSORIOCSPOLLRATE, 2)) {
+	if (OK != ioctl(fd, SENSORIOCSPOLLRATE, 5)) {
 		errx(1, "failed to set 2Hz poll rate");
 	}
 
 	/* read the sensor 5x and report each value */
-	for (unsigned i = 0; i < 5; i++) {
+	for (unsigned i = 0; i < 20; i++) {
 		struct pollfd fds;
 
 		/* wait for data to be ready */
 		fds.fd = fd;
 		fds.events = POLLIN;
-		ret = poll(&fds, 1, 2000);
+		ret = poll(&fds, 1, 1000);
 
 		if (ret != 1) {
 			errx(1, "timed out waiting for sensor data");
@@ -893,8 +943,9 @@ info()
 	if (g_dev == nullptr) {
 		errx(1, "driver not running");
 	}
+//	printf("count = %ld \n",count_debug);
 
-	printf("state @ %p\n", g_dev);
+	printf(" state @ %p\n", g_dev);
 	g_dev->print_info();
 
 	exit(0);

@@ -617,10 +617,10 @@ then
 	fi
 
 	# mb12xx sonar sensor
-	if param compare SENS_EN_MB12XX 1
-	then
+	# if param compare SENS_EN_MB12XX 1
+	# then
 		mb12xx start
-	fi
+	# fi
 
 	# teraranger one tof sensor
 	if param compare SENS_EN_TRONE 1

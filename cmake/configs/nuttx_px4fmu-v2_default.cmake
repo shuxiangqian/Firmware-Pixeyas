@@ -23,9 +23,9 @@ set(config_module_list
 	drivers/l3gd20
 	drivers/hmc5883
 	drivers/ms5611
-	#drivers/mb12xx
+	drivers/mb12xx
 	#drivers/srf02
-	drivers/sf0x
+	#drivers/sf0x
 	#drivers/ll40ls
 	drivers/trone
 	drivers/gps
@@ -40,13 +40,13 @@ set(config_module_list
 	#drivers/frsky_telemetry
 	modules/sensors
 	#drivers/mkblctrl
-	drivers/px4flow
+	#drivers/px4flow
 	#drivers/oreoled
 	#drivers/vmount
 	drivers/pwm_input
 	drivers/camera_trigger
 	drivers/bst
-	drivers/snapdragon_rc_pwm
+	#drivers/snapdragon_rc_pwm
 	drivers/lis3mdl
 
 	#
@@ -98,14 +98,14 @@ set(config_module_list
 	#
 	modules/attitude_estimator_q
 	modules/position_estimator_inav
-	modules/local_position_estimator
+	#modules/local_position_estimator
 	modules/ekf2
 
 	#
 	# Vehicle Control
 	#
-	modules/fw_pos_control_l1
-	modules/fw_att_control
+	#modules/fw_pos_control_l1
+	#modules/fw_att_control
 	modules/mc_att_control
 	modules/mc_pos_control
 	#modules/vtol_att_control
@@ -125,8 +125,6 @@ set(config_module_list
 	modules/uORB
 	modules/dataman
 	
-	# iffpc
-	modules/mc_alt_estimator
 
 	#
 	# Libraries
@@ -160,9 +158,10 @@ set(config_module_list
 	#
 	#examples/rover_steering_control
 
-	#pixeyas-specific modules
-	#sonar group
-	drivers/sonar_group_service
+	# pixeyas-specific modules
+	# sonar group
+	#drivers/sonar_group_service
+	#modules/mc_alt_estimator
 	
 	#
 	# Demo apps

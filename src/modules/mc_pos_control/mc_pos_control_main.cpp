@@ -1062,6 +1062,11 @@ MulticopterPositionControl::limit_pos_sp_offset()
 void
 MulticopterPositionControl::caculate_thrust(float *thrust)
 {
+
+	*thrust = _manual.z;
+
+	return;
+
 	float error=0;
 	float height;
 	static float Integral=0,error_pre=0;
@@ -2520,10 +2525,10 @@ MulticopterPositionControl::task_main()
 			}	*/
 
 			if (_att_sp_pub != nullptr) {
-				caculate_thrust(&_att_sp.thrust);
+//				caculate_thrust(&_att_sp.thrust);
 				//alt_ctrl_s.thrust=_att_sp.thrust;
 				//orb_publish(ORB_ID(alt_ctrl),&_alt_ctrl_pub, &alt_ctrl_s);
-				//_att_sp.thrust=0.7f;
+				_att_sp.thrust=0.14f;
 				orb_publish(_attitude_setpoint_id, _att_sp_pub, &_att_sp);
 
 			} else if (_attitude_setpoint_id) {

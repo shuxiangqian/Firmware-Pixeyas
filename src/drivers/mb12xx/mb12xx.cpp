@@ -98,100 +98,94 @@
 
 //debug
 //unsigned int count_debug = 0;
-class MB12XX : public device::I2C
-{
+class MB12XX: public device::I2C {
 public:
 	MB12XX(int bus = MB12XX_BUS, int address = MB12XX_BASEADDR);
 	virtual ~MB12XX();
 
-	virtual int 		init();
+	virtual int init();
 
-	virtual ssize_t		read(struct file *filp, char *buffer, size_t buflen);
-	virtual int			ioctl(struct file *filp, int cmd, unsigned long arg);
+	virtual ssize_t read(struct file *filp, char *buffer, size_t buflen);
+	virtual int ioctl(struct file *filp, int cmd, unsigned long arg);
 
 	/**
-	* Diagnostics - print some basic information about the driver.
-	*/
-	void				print_info();
+	 * Diagnostics - print some basic information about the driver.
+	 */
+	void print_info();
 
 protected:
-	virtual int			probe();
+	virtual int probe();
 
 private:
-	float				_min_distance;
-	float				_max_distance;
-	work_s				_work;
-	ringbuffer::RingBuffer	*_reports;
-	bool				_sensor_ok;
-	int					_measure_ticks;
-	bool				_collect_phase;
-	int				_class_instance;
-	int				_orb_class_instance0;
+	float _min_distance;
+	float _max_distance;
+	work_s _work;
+	ringbuffer::RingBuffer *_reports;bool _sensor_ok;
+	int _measure_ticks;bool _collect_phase;
+	int _class_instance;
+	int _orb_class_instance0;
 	//int 			_orb_class_instance1;
 
-	orb_advert_t		_distance_sensor_topic0,_distance_sensor_topic1;
+	orb_advert_t _distance_sensor_topic0, _distance_sensor_topic1;
 
-	perf_counter_t		_sample_perf;
-	perf_counter_t		_comms_errors;
-	perf_counter_t		_buffer_overflows;
+	perf_counter_t _sample_perf;
+	perf_counter_t _comms_errors;
+	perf_counter_t _buffer_overflows;
 
-	uint8_t				_cycle_counter;	/* counter in cycle to change i2c adresses */
-	int					_cycling_rate;	/* */
-	uint8_t				_index_counter;	/* temporary sonar i2c address */
-	std::vector<uint8_t>	addr_ind; 	/* temp sonar i2c address vector */
-	std::vector<float>
-	_latest_sonar_measurements; /* vector to store latest sonar measurements in before writing to report */
-
+	uint8_t _cycle_counter; /* counter in cycle to change i2c adresses */
+	int _cycling_rate; /* */
+	uint8_t _index_counter; /* temporary sonar i2c address */
+	std::vector<uint8_t> addr_ind; /* temp sonar i2c address vector */
+	std::vector<float> _latest_sonar_measurements; /* vector to store latest sonar measurements in before writing to report */
 
 	struct distance_sensor_s report;
 
 	/**
-	* Test whether the device supported by the driver is present at a
-	* specific address.
-	*
-	* @param address	The I2C bus address to probe.
-	* @return			True if the device is present.
-	*/
-	int					probe_address(uint8_t address);
+	 * Test whether the device supported by the driver is present at a
+	 * specific address.
+	 *
+	 * @param address	The I2C bus address to probe.
+	 * @return			True if the device is present.
+	 */
+	int probe_address(uint8_t address);
 
 	/**
-	* Initialise the automatic measurement state machine and start it.
-	*
-	* @note This function is called at open and error time.  It might make sense
-	*       to make it more aggressive about resetting the bus in case of errors.
-	*/
-	void				start();
+	 * Initialise the automatic measurement state machine and start it.
+	 *
+	 * @note This function is called at open and error time.  It might make sense
+	 *       to make it more aggressive about resetting the bus in case of errors.
+	 */
+	void start();
 
 	/**
-	* Stop the automatic measurement state machine.
-	*/
-	void				stop();
+	 * Stop the automatic measurement state machine.
+	 */
+	void stop();
 
 	/**
-	* Set the min and max distance thresholds if you want the end points of the sensors
-	* range to be brought in at all, otherwise it will use the defaults MB12XX_MIN_DISTANCE
-	* and MB12XX_MAX_DISTANCE
-	*/
-	void				set_minimum_distance(float min);
-	void				set_maximum_distance(float max);
-	float				get_minimum_distance();
-	float				get_maximum_distance();
+	 * Set the min and max distance thresholds if you want the end points of the sensors
+	 * range to be brought in at all, otherwise it will use the defaults MB12XX_MIN_DISTANCE
+	 * and MB12XX_MAX_DISTANCE
+	 */
+	void set_minimum_distance(float min);
+	void set_maximum_distance(float max);
+	float get_minimum_distance();
+	float get_maximum_distance();
 
 	/**
-	* Perform a poll cycle; collect from the previous measurement
-	* and start a new one.
-	*/
-	void				cycle();
-	int					measure();
-	int					collect(uint8_t);
+	 * Perform a poll cycle; collect from the previous measurement
+	 * and start a new one.
+	 */
+	void cycle();
+	int measure();
+	int collect(uint8_t);
 	/**
-	* Static trampoline from the workq context; because we don't have a
-	* generic workq wrapper yet.
-	*
-	* @param arg		Instance pointer for the driver that is polling.
-	*/
-	static void			cycle_trampoline(void *arg);
-
+	 * Static trampoline from the workq context; because we don't have a
+	 * generic workq wrapper yet.
+	 *
+	 * @param arg		Instance pointer for the driver that is polling.
+	 */
+	static void cycle_trampoline(void *arg);
 
 };
 
@@ -201,24 +195,18 @@ private:
 extern "C" __EXPORT int mb12xx_main(int argc, char *argv[]);
 
 MB12XX::MB12XX(int bus, int address) :
-	I2C("MB12xx", MB12XX_DEVICE_PATH, bus, address, 100000),
-	_min_distance(MB12XX_MIN_DISTANCE),
-	_max_distance(MB12XX_MAX_DISTANCE),
-	_reports(nullptr),
-	_sensor_ok(false),
-	_measure_ticks(0),
-	_collect_phase(false),
-	_class_instance(-1),
-	_orb_class_instance0(-1),
+		I2C("MB12xx", MB12XX_DEVICE_PATH, bus, address, 100000), _min_distance(
+		MB12XX_MIN_DISTANCE), _max_distance(MB12XX_MAX_DISTANCE), _reports(
+				nullptr), _sensor_ok(false), _measure_ticks(0), _collect_phase(
+		false), _class_instance(-1), _orb_class_instance0(-1),
 //	_orb_class_instance1(-1),
-	_distance_sensor_topic0(nullptr),
+		_distance_sensor_topic0(nullptr),
 //	_distance_sensor_topic1(nullptr),
-	_sample_perf(perf_alloc(PC_ELAPSED, "mb12xx_read")),
-	_comms_errors(perf_alloc(PC_COUNT, "mb12xx_com_err")),
-	_buffer_overflows(perf_alloc(PC_COUNT, "mb12xx_buf_of")),
-	_cycle_counter(0),	/* initialising counter for cycling function to zero */
-	_cycling_rate(0),	/* initialising cycling rate (which can differ depending on one sonar or multiple) */
-	_index_counter(0) 	/* initialising temp sonar i2c address to zero */
+		_sample_perf(perf_alloc(PC_ELAPSED, "mb12xx_read")), _comms_errors(
+				perf_alloc(PC_COUNT, "mb12xx_com_err")), _buffer_overflows(
+				perf_alloc(PC_COUNT, "mb12xx_buf_of")), _cycle_counter(0), /* initialising counter for cycling function to zero */
+		_cycling_rate(0), /* initialising cycling rate (which can differ depending on one sonar or multiple) */
+		_index_counter(0) /* initialising temp sonar i2c address to zero */
 
 {
 	/* enable debug() calls */
@@ -228,8 +216,7 @@ MB12XX::MB12XX(int bus, int address) :
 	memset(&_work, 0, sizeof(_work));
 }
 
-MB12XX::~MB12XX()
-{
+MB12XX::~MB12XX() {
 	/* make sure we are truly inactive */
 	stop();
 
@@ -239,7 +226,8 @@ MB12XX::~MB12XX()
 	}
 
 	if (_class_instance != -1) {
-		unregister_class_devname(RANGE_FINDER_BASE_DEVICE_PATH, _class_instance);
+		unregister_class_devname(RANGE_FINDER_BASE_DEVICE_PATH,
+				_class_instance);
 	}
 
 	/* free perf counters */
@@ -248,9 +236,7 @@ MB12XX::~MB12XX()
 	perf_free(_buffer_overflows);
 }
 
-int
-MB12XX::init()
-{
+int MB12XX::init() {
 	int ret = PX4_ERROR;
 
 	/* do I2C init (and probe) first */
@@ -261,8 +247,8 @@ MB12XX::init()
 	/* allocate basic report buffers */
 	_reports = new ringbuffer::RingBuffer(2, sizeof(distance_sensor_s));
 
-	_index_counter = MB12XX_BASEADDR;	/* set temp sonar i2c address to base adress */
-	set_address(_index_counter);		/* set I2c port to temp sonar i2c adress */
+	_index_counter = MB12XX_BASEADDR; /* set temp sonar i2c address to base adress */
+	set_address(_index_counter); /* set I2c port to temp sonar i2c adress */
 
 	if (_reports == nullptr) {
 		return ret;
@@ -271,33 +257,34 @@ MB12XX::init()
 	_class_instance = register_class_devname(RANGE_FINDER_BASE_DEVICE_PATH);
 
 	/* get a publish handle on the range finder topic */
-	struct distance_sensor_s ds_report = {};
+	struct distance_sensor_s ds_report = { };
 
 //	_distance_sensor_topic = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
 //				 &_orb_class_instance, ORB_PRIO_LOW);
-	_distance_sensor_topic0 = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
-					 &_orb_class_instance0, ORB_PRIO_DEFAULT);
+	_distance_sensor_topic0 = orb_advertise_multi(ORB_ID(distance_sensor),
+			&ds_report, &_orb_class_instance0, ORB_PRIO_DEFAULT);
 
 //	_distance_sensor_topic1 = orb_advertise_multi(ORB_ID(distance_sensor), &ds_report,
 //					 &_orb_class_instance1, ORB_PRIO_DEFAULT);
 
 	if (_distance_sensor_topic0 == nullptr) {
-		DEVICE_LOG("failed to create distance_sensor object. Did you start uOrb?");
+		DEVICE_LOG(
+				"failed to create distance_sensor object. Did you start uOrb?");
 	}
 
 //	if (_distance_sensor_topic1 == nullptr) {
 //			DEVICE_LOG("failed to create distance_sensor object. Did you start uOrb?");
 //		}
 
-	// XXX we should find out why we need to wait 200 ms here
+// XXX we should find out why we need to wait 200 ms here
 	usleep(200000);
 
 	/* check for connected rangefinders on each i2c port:
-	   We start from i2c base address (0x70 = 112) and count downwards
-	   So second iteration it uses i2c address 111, third iteration 110 and so on*/
+	 We start from i2c base address (0x70 = 112) and count downwards
+	 So second iteration it uses i2c address 111, third iteration 110 and so on*/
 	for (unsigned counter = 0; counter <= MB12XX_MAX_RANGEFINDERS; counter++) {
-		_index_counter = MB12XX_BASEADDR - counter;	/* set temp sonar i2c address to base adress - counter */
-		set_address(_index_counter);			/* set I2c port to temp sonar i2c adress */
+		_index_counter = MB12XX_BASEADDR - counter; /* set temp sonar i2c address to base adress - counter */
+		set_address(_index_counter); /* set I2c port to temp sonar i2c adress */
 		int ret2 = measure();
 
 		if (ret2 == 0) { /* sonar is present -> store address_index in array */
@@ -332,100 +319,88 @@ MB12XX::init()
 	return ret;
 }
 
-int
-MB12XX::probe()
-{
+int MB12XX::probe() {
 	return measure();
 }
 
-void
-MB12XX::set_minimum_distance(float min)
-{
+void MB12XX::set_minimum_distance(float min) {
 	_min_distance = min;
 }
 
-void
-MB12XX::set_maximum_distance(float max)
-{
+void MB12XX::set_maximum_distance(float max) {
 	_max_distance = max;
 }
 
-float
-MB12XX::get_minimum_distance()
-{
+float MB12XX::get_minimum_distance() {
 	return _min_distance;
 }
 
-float
-MB12XX::get_maximum_distance()
-{
+float MB12XX::get_maximum_distance() {
 	return _max_distance;
 }
 
-int
-MB12XX::ioctl(struct file *filp, int cmd, unsigned long arg)
-{
+int MB12XX::ioctl(struct file *filp, int cmd, unsigned long arg) {
 	switch (cmd) {
 
 	case SENSORIOCSPOLLRATE: {
-			switch (arg) {
+		switch (arg) {
 
-			/* switching to manual polling */
-			case SENSOR_POLLRATE_MANUAL:
-				stop();
-				_measure_ticks = 0;
-				return OK;
+		/* switching to manual polling */
+		case SENSOR_POLLRATE_MANUAL:
+			stop();
+			_measure_ticks = 0;
+			return OK;
 
 			/* external signalling (DRDY) not supported */
-			case SENSOR_POLLRATE_EXTERNAL:
+		case SENSOR_POLLRATE_EXTERNAL:
 
 			/* zero would be bad */
-			case 0:
-				return -EINVAL;
+		case 0:
+			return -EINVAL;
 
 			/* set default/max polling rate */
-			case SENSOR_POLLRATE_MAX:
-			case SENSOR_POLLRATE_DEFAULT: {
-					/* do we need to start internal polling? */
-					bool want_start = (_measure_ticks == 0);
+		case SENSOR_POLLRATE_MAX:
+		case SENSOR_POLLRATE_DEFAULT: {
+			/* do we need to start internal polling? */
+			bool want_start = (_measure_ticks == 0);
 
-					/* set interval for next measurement to minimum legal value */
-					_measure_ticks = USEC2TICK(_cycling_rate);
+			/* set interval for next measurement to minimum legal value */
+			_measure_ticks = USEC2TICK(_cycling_rate);
 
-					/* if we need to start the poll state machine, do it */
-					if (want_start) {
-						start();
+			/* if we need to start the poll state machine, do it */
+			if (want_start) {
+				start();
 
-					}
+			}
 
-					return OK;
-				}
+			return OK;
+		}
 
 			/* adjust to a legal polling interval in Hz */
-			default: {
-					/* do we need to start internal polling? */
-					bool want_start = (_measure_ticks == 0);
+		default: {
+			/* do we need to start internal polling? */
+			bool want_start = (_measure_ticks == 0);
 
-					/* convert hz to tick interval via microseconds */
-					int ticks = USEC2TICK(1000000 / arg);
+			/* convert hz to tick interval via microseconds */
+			int ticks = USEC2TICK(1000000 / arg);
 
-					/* check against maximum rate */
-					if (ticks < USEC2TICK(_cycling_rate)) {
-						return -EINVAL;
-					}
-
-					/* update interval for next measurement */
-					_measure_ticks = ticks;
-
-					/* if we need to start the poll state machine, do it */
-					if (want_start) {
-						start();
-					}
-
-					return OK;
-				}
+			/* check against maximum rate */
+			if (ticks < USEC2TICK(_cycling_rate)) {
+				return -EINVAL;
 			}
+
+			/* update interval for next measurement */
+			_measure_ticks = ticks;
+
+			/* if we need to start the poll state machine, do it */
+			if (want_start) {
+				start();
+			}
+
+			return OK;
 		}
+		}
+	}
 
 	case SENSORIOCGPOLLRATE:
 		if (_measure_ticks == 0) {
@@ -435,22 +410,22 @@ MB12XX::ioctl(struct file *filp, int cmd, unsigned long arg)
 		return (1000 / _measure_ticks);
 
 	case SENSORIOCSQUEUEDEPTH: {
-			/* lower bound is mandatory, upper bound is a sanity check */
-			if ((arg < 1) || (arg > 100)) {
-				return -EINVAL;
-			}
-
-			irqstate_t flags = px4_enter_critical_section();
-
-			if (!_reports->resize(arg)) {
-				px4_leave_critical_section(flags);
-				return -ENOMEM;
-			}
-
-			px4_leave_critical_section(flags);
-
-			return OK;
+		/* lower bound is mandatory, upper bound is a sanity check */
+		if ((arg < 1) || (arg > 100)) {
+			return -EINVAL;
 		}
+
+		irqstate_t flags = px4_enter_critical_section();
+
+		if (!_reports->resize(arg)) {
+			px4_leave_critical_section(flags);
+			return -ENOMEM;
+		}
+
+		px4_leave_critical_section(flags);
+
+		return OK;
+	}
 
 	case SENSORIOCGQUEUEDEPTH:
 		return _reports->size();
@@ -459,13 +434,13 @@ MB12XX::ioctl(struct file *filp, int cmd, unsigned long arg)
 		/* XXX implement this */
 		return -EINVAL;
 
-	case RANGEFINDERIOCSETMINIUMDISTANCE: {
+		case RANGEFINDERIOCSETMINIUMDISTANCE: {
 			set_minimum_distance(*(float *)arg);
 			return 0;
 		}
 		break;
 
-	case RANGEFINDERIOCSETMAXIUMDISTANCE: {
+		case RANGEFINDERIOCSETMAXIUMDISTANCE: {
 			set_maximum_distance(*(float *)arg);
 			return 0;
 		}
@@ -477,12 +452,11 @@ MB12XX::ioctl(struct file *filp, int cmd, unsigned long arg)
 	}
 }
 
-ssize_t
-MB12XX::read(struct file *filp, char *buffer, size_t buflen)
-{
+ssize_t MB12XX::read(struct file *filp, char *buffer, size_t buflen) {
 
 	unsigned count = buflen / sizeof(struct distance_sensor_s);
-	struct distance_sensor_s *rbuf = reinterpret_cast<struct distance_sensor_s *>(buffer);
+	struct distance_sensor_s *rbuf =
+			reinterpret_cast<struct distance_sensor_s *>(buffer);
 	int ret = 0;
 
 	/* buffer must be large enough */
@@ -538,9 +512,7 @@ MB12XX::read(struct file *filp, char *buffer, size_t buflen)
 	return ret;
 }
 
-int
-MB12XX::measure()
-{
+int MB12XX::measure() {
 
 	int ret;
 
@@ -562,16 +534,14 @@ MB12XX::measure()
 	return ret;
 }
 
-int
-MB12XX::collect(uint8_t index_count_)
-{
-	int	ret = -EIO;
+int MB12XX::collect(uint8_t index_count_) {
+	int ret = -EIO;
 
 	//static uint64_t count0 = 0,count1 = 0;
 	static uint64_t count0 = 0;
 
 	/* read from the sensor */
-	uint8_t val[2] = {0, 0};
+	uint8_t val[2] = { 0, 0 };
 
 	perf_begin(_sample_perf);
 
@@ -597,22 +567,27 @@ MB12XX::collect(uint8_t index_count_)
 	report.covariance = 0.0f;
 	report.id = 0;
 //	report.count = count0;
-	if((MB12XX_BASEADDR - index_count_) == 0)
-	{
+	if ((MB12XX_BASEADDR - index_count_) == 0) {
 		//report.current_distance = distance_m;
 		report.distance[0] = distance_m;
 		/* publish it, if we are the primary */
-	}
-	else if((MB12XX_BASEADDR - index_count_) == 1)
-	{
+		if (_distance_sensor_topic0 != nullptr) {
+			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+					&report);
+		}
+	} else if ((MB12XX_BASEADDR - index_count_) == 1) {
 		report.distance[1] = distance_m;
-	}
-	else if((MB12XX_BASEADDR - index_count_) == 2)
-	{
+		if (_distance_sensor_topic0 != nullptr) {
+			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+					&report);
+		}
+	} else if ((MB12XX_BASEADDR - index_count_) == 2) {
 		report.distance[2] = distance_m;
-	}
-	else if((MB12XX_BASEADDR - index_count_) == 3)
-	{
+		if (_distance_sensor_topic0 != nullptr) {
+			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+					&report);
+		}
+	} else if ((MB12XX_BASEADDR - index_count_) == 3) {
 		count0++;
 		report.count = count0;
 		report.distance[3] = distance_m;
@@ -622,7 +597,8 @@ MB12XX::collect(uint8_t index_count_)
 //			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic1, &report1);
 //		}
 		if (_distance_sensor_topic0 != nullptr) {
-			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0, &report);
+			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+					&report);
 		}
 	}
 
@@ -639,19 +615,17 @@ MB12XX::collect(uint8_t index_count_)
 	return ret;
 }
 
-void
-MB12XX::start()
-{
+void MB12XX::start() {
 
 	/* reset the report ring and state machine */
 	_collect_phase = false;
 	_reports->flush();
 
 	/* schedule a cycle to start things */
-	work_queue(HPWORK, &_work, (worker_t)&MB12XX::cycle_trampoline, this, 5);
+	work_queue(HPWORK, &_work, (worker_t) &MB12XX::cycle_trampoline, this, 5);
 
 	/* notify about state change */
-	struct subsystem_info_s info = {};
+	struct subsystem_info_s info = { };
 	info.present = true;
 	info.enabled = true;
 	info.ok = true;
@@ -662,32 +636,25 @@ MB12XX::start()
 	if (pub != nullptr) {
 		orb_publish(ORB_ID(subsystem_info), pub, &info);
 
-
 	} else {
 		pub = orb_advertise(ORB_ID(subsystem_info), &info);
 
 	}
 }
 
-void
-MB12XX::stop()
-{
+void MB12XX::stop() {
 	work_cancel(HPWORK, &_work);
 }
 
-void
-MB12XX::cycle_trampoline(void *arg)
-{
+void MB12XX::cycle_trampoline(void *arg) {
 
-	MB12XX *dev = (MB12XX *)arg;
+	MB12XX *dev = (MB12XX *) arg;
 
 	dev->cycle();
 
 }
 
-void
-MB12XX::cycle()
-{
+void MB12XX::cycle() {
 	if (_collect_phase) {
 		_index_counter = addr_ind[_cycle_counter]; /*sonar from previous iteration collect is now read out */
 		set_address(_index_counter);
@@ -710,21 +677,16 @@ MB12XX::cycle()
 			_cycle_counter = 0;
 		}
 
-
-
 		/* Is there a collect->measure gap? Yes, and the timing is set equal to the cycling_rate
-		   Otherwise the next sonar would fire without the first one having received its reflected sonar pulse */
+		 Otherwise the next sonar would fire without the first one having received its reflected sonar pulse */
 
 		if (_measure_ticks > USEC2TICK(_cycling_rate)) {
 
 			//count_debug ++;
 
 			/* schedule a fresh cycle call when we are ready to measure again */
-			work_queue(HPWORK,
-				   &_work,
-				   (worker_t)&MB12XX::cycle_trampoline,
-				   this,
-				   _measure_ticks - USEC2TICK(_cycling_rate));
+			work_queue(HPWORK, &_work, (worker_t) &MB12XX::cycle_trampoline,
+					this, _measure_ticks - USEC2TICK(_cycling_rate));
 			return;
 		}
 	}
@@ -748,17 +710,12 @@ MB12XX::cycle()
 	usleep(22000);
 
 	/* schedule a fresh cycle call when the measurement is done */
-	work_queue(HPWORK,
-		   &_work,
-		   (worker_t)&MB12XX::cycle_trampoline,
-		   this,
-		   USEC2TICK(_cycling_rate));
+	work_queue(HPWORK, &_work, (worker_t) &MB12XX::cycle_trampoline, this,
+			USEC2TICK(_cycling_rate));
 
 }
 
-void
-MB12XX::print_info()
-{
+void MB12XX::print_info() {
 	perf_print_counter(_sample_perf);
 	perf_print_counter(_comms_errors);
 	perf_print_counter(_buffer_overflows);
@@ -769,23 +726,20 @@ MB12XX::print_info()
 /**
  * Local functions in support of the shell command.
  */
-namespace mb12xx
-{
+namespace mb12xx {
 
-MB12XX	*g_dev;
+MB12XX *g_dev;
 
-void	start();
-void	stop();
-void	test();
-void	reset();
-void	info();
+void start();
+void stop();
+void test();
+void reset();
+void info();
 
 /**
  * Start the driver.
  */
-void
-start()
-{
+void start() {
 	int fd;
 
 	if (g_dev != nullptr) {
@@ -816,7 +770,7 @@ start()
 
 	exit(0);
 
-fail:
+	fail:
 
 	if (g_dev != nullptr) {
 		delete g_dev;
@@ -829,8 +783,7 @@ fail:
 /**
  * Stop the driver
  */
-void stop()
-{
+void stop() {
 	if (g_dev != nullptr) {
 		delete g_dev;
 		g_dev = nullptr;
@@ -847,9 +800,7 @@ void stop()
  * make sure we can collect data from the sensor in polled
  * and automatic modes.
  */
-void
-test()
-{
+void test() {
 	struct distance_sensor_s report;
 	ssize_t sz;
 	int ret;
@@ -857,7 +808,9 @@ test()
 	int fd = open(MB12XX_DEVICE_PATH, O_RDONLY);
 
 	if (fd < 0) {
-		err(1, "%s open failed (try 'mb12xx start' if the driver is not running", MB12XX_DEVICE_PATH);
+		err(1,
+				"%s open failed (try 'mb12xx start' if the driver is not running",
+				MB12XX_DEVICE_PATH);
 	}
 
 	/* do a simple demand read */
@@ -868,7 +821,7 @@ test()
 	}
 
 	warnx("single read");
-	warnx("measurement: %0.2f m", (double)report.current_distance);
+	warnx("measurement: %0.2f m", (double )report.current_distance);
 	warnx("time:        %llu", report.timestamp);
 
 	/* start the sensor polling at 2Hz */
@@ -897,9 +850,11 @@ test()
 		}
 
 		warnx("periodic read %u", i);
-		warnx("valid %u", (float)report.current_distance > report.min_distance
-		      && (float)report.current_distance < report.max_distance ? 1 : 0);
-		warnx("measurement: %0.3f", (double)report.current_distance);
+		warnx("valid %u",
+				(float )report.current_distance > report.min_distance
+						&& (float )report.current_distance
+								< report.max_distance ? 1 : 0);
+		warnx("measurement: %0.3f", (double )report.current_distance);
 		warnx("time:        %llu", report.timestamp);
 	}
 
@@ -914,9 +869,7 @@ test()
 /**
  * Reset the driver.
  */
-void
-reset()
-{
+void reset() {
 	int fd = open(MB12XX_DEVICE_PATH, O_RDONLY);
 
 	if (fd < 0) {
@@ -937,9 +890,7 @@ reset()
 /**
  * Print a little info about the driver.
  */
-void
-info()
-{
+void info() {
 	if (g_dev == nullptr) {
 		errx(1, "driver not running");
 	}
@@ -953,9 +904,7 @@ info()
 
 } /* namespace */
 
-int
-mb12xx_main(int argc, char *argv[])
-{
+int mb12xx_main(int argc, char *argv[]) {
 	/*
 	 * Start/load the driver.
 	 */

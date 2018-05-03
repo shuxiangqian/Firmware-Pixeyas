@@ -570,6 +570,9 @@ MS5611::cycle()
 		/* perform collection */
 		ret = collect();
 
+		// !!!
+//		ret = OK;
+
 		if (ret != OK) {
 			if (ret == -6) {
 				/*
@@ -615,6 +618,8 @@ MS5611::cycle()
 
 	/* measurement phase */
 	ret = measure();
+	// !!!
+//	ret = OK;
 
 	if (ret != OK) {
 		/* issue a reset command to the sensor */
@@ -1003,7 +1008,7 @@ start(enum MS5611_BUS busid, enum MS56XX_DEVICE_TYPES device_type)
 		started = started | start_bus(bus_options[i], device_type);
 	}
 
-	if (!started) {
+	if (started) {
 		errx(1, "driver start failed");
 	}
 
@@ -1024,7 +1029,7 @@ struct ms5611_bus_option &find_bus(enum MS5611_BUS busid)
 		}
 	}
 
-	errx(1, "bus %u not started", (unsigned)busid);
+	errx(1, "bus %u not started!!", (unsigned)busid);
 }
 
 /**

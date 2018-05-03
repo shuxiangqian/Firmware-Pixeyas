@@ -236,7 +236,7 @@ user_start(int argc, char *argv[])
 {
 	/* configure the first 8 PWM outputs (i.e. all of them) */
 	up_pwm_servo_init(0xff);
-
+//	test;
 	/* run C++ ctors before we go any further */
 	up_cxxinitialize();
 

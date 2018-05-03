@@ -1363,6 +1363,7 @@ int commander_thread_main(int argc, char *argv[])
 
 	status_flags.condition_power_input_valid = true;
 	avionics_power_rail_voltage = -1.0f;
+//	avionics_power_rail_voltage = 5.0f;
 	status_flags.usb_connected = false;
 
 	// CIRCUIT BREAKERS
@@ -3068,7 +3069,7 @@ control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actu
 			set_normal_color = true;
 
 		} else if (status_local->arming_state == vehicle_status_s::ARMING_STATE_ARMED_ERROR || (!status_flags.condition_system_sensors_initialized && hotplug_timeout)) {
-			rgbled_set_mode(RGBLED_MODE_BLINK_FAST);
+			rgbled_set_mode(RGBLED_MODE_BLINK_FAST);	// FAST
 			rgbled_set_color(RGBLED_COLOR_RED);
 
 		} else if (status_local->arming_state == vehicle_status_s::ARMING_STATE_STANDBY) {

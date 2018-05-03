@@ -276,6 +276,9 @@ struct pwm_output_rc_config {
 #define PWM_SERVO_MODE_6CAP		       11
 #define PWM_SERVO_SET_MODE			_PX4_IOC(_PWM_SERVO_BASE, 32)
 
+// shuxinagqian
+void select_channel(int channel);
+
 /*
  *
  *
@@ -283,9 +286,16 @@ struct pwm_output_rc_config {
  *
  *
  */
-
 /** set a single servo to a specific value */
 #define PWM_SERVO_SET(_servo)	_PX4_IOC(_PWM_SERVO_BASE, 0x30 + _servo)
+//#define PWM_SERVO_SET(_servo)	select_channel(_servo)
+
+//=========================================================
+//#define PWM_SERVO_SET(_servo)	if(_servo == 0)
+//									_PX4_IOC(_PWM_SERVO_BASE, 0x30 + 1);
+//								else
+//									_PX4_IOC(_PWM_SERVO_BASE, 0x30 + 2)
+//=========================================================
 
 /** get a single specific servo value */
 #define PWM_SERVO_GET(_servo)	_PX4_IOC(_PWM_SERVO_BASE, 0x50 + _servo)

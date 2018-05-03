@@ -489,6 +489,7 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- BARO ---- */
+	checkBaro = false;
 	if (checkBaro) {
 		bool prime_found = false;
 		int32_t prime_id = 0;
@@ -519,6 +520,7 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- AIRSPEED ---- */
+	checkAirspeed = false;
 	if (checkAirspeed) {
 		if (!airspeedCheck(mavlink_log_pub, true, reportFailures)) {
 			failed = true;
@@ -526,6 +528,7 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- RC CALIBRATION ---- */
+	checkRC = false;
 	if (checkRC) {
 		if (rc_calibration_check(mavlink_log_pub, reportFailures, isVTOL) != OK) {
 			if (reportFailures) {
@@ -536,12 +539,14 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- Global Navigation Satellite System receiver ---- */
+	checkGNSS = false;
 	if (checkGNSS) {
 		if (!gnssCheck(mavlink_log_pub, reportFailures)) {
 			failed = true;
 		}
 	}
 
+//	failed = true;
 	/* Report status */
 	return !failed;
 }

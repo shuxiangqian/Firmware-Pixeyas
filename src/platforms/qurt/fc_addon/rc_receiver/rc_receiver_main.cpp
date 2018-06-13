@@ -268,6 +268,8 @@ void task_main(int argc, char *argv[])
 			// format, so we need to double the channel value before the scaling
 			_rc_in.values[i] = ((((int)(rc_inputs[i] * 2) - 1024) * 1000) / 1700) + 1500;
 		}
+		//by fxk
+		_rc_in.values[3] = 1502;
 
 		orb_publish(ORB_ID(input_rc), _input_rc_pub, &_rc_in);
 	}

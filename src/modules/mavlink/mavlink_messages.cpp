@@ -90,7 +90,7 @@
 #include <uORB/topics/vtol_vehicle_status.h>
 #include <uORB/topics/wind_estimate.h>
 #include <uORB/uORB.h>
-#include <v1.0/custom_messages/mavlink_msg_sonargroup.h>
+//#include <v1.0/custom_messages/mavlink_msg_sonargroup.h>
 #include <uORB/topics/sonar_distance.h>
 
 
@@ -3458,7 +3458,7 @@ protected:
 		}
 	}
 };
-
+/*
 class MavlinkStreamSonarGroup : public MavlinkStream
 {
 public:
@@ -3491,7 +3491,7 @@ private:
     MavlinkOrbSubscription *_sub;
     uint64_t _ca_traj_time;
 
-    /* do not allow top copying this class */
+
     MavlinkStreamSonarGroup(MavlinkStreamSonarGroup &);
     MavlinkStreamSonarGroup &operator = (const MavlinkStreamSonarGroup &);
 
@@ -3519,7 +3519,7 @@ protected:
             mavlink_msg_sonargroup_send_struct(_mavlink->get_channel(), &_msg_sonargroup);
         }
     }
-};
+};	*/
 
 const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static, &MavlinkStreamHeartbeat::get_id_static),
@@ -3565,6 +3565,6 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamAltitude::new_instance, &MavlinkStreamAltitude::get_name_static, &MavlinkStreamAltitude::get_id_static),
 	new StreamListItem(&MavlinkStreamADSBVehicle::new_instance, &MavlinkStreamADSBVehicle::get_name_static, &MavlinkStreamADSBVehicle::get_id_static),
 	new StreamListItem(&MavlinkStreamWind::new_instance, &MavlinkStreamWind::get_name_static, &MavlinkStreamWind::get_id_static),
-	new StreamListItem(&MavlinkStreamSonarGroup::new_instance, &MavlinkStreamSonarGroup::get_name_static, &MavlinkStreamSonarGroup::get_id_static),
+	//new StreamListItem(&MavlinkStreamSonarGroup::new_instance, &MavlinkStreamSonarGroup::get_name_static, &MavlinkStreamSonarGroup::get_id_static),
 	nullptr
 };

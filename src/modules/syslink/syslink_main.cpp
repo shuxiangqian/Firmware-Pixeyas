@@ -505,7 +505,10 @@ Syslink::handle_raw(syslink_message_t *sys)
 		rc.values[0] = pitch * 500 / 20 + 1500;
 		rc.values[1] = roll * 500 / 20 + 1500;
 		rc.values[2] = yaw * 500 / 150 + 1500;
+		//by fxk
+		//rc.values[3] =1502;
 		rc.values[3] = cmd->thrust * 1000 / USHRT_MAX + 1000;
+
 		rc.values[4] = 1000; // Dummy channel as px4 needs at least 5
 
 		if (_rc_pub == nullptr) {

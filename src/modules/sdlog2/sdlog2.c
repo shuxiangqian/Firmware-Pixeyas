@@ -2396,6 +2396,7 @@ void sdlog2_status()
 			//warnx("[SD] thrust=%.2f alt_sp=%.2f alt_now=%.2f count=%d",(double)thrust,(double)alt_sp,(double)alt_now,count);
 
 			warnx("============press CTRL+C to abort============");
+/*
 			char c;
 			struct pollfd fds;
 			int ret;
@@ -2410,7 +2411,7 @@ void sdlog2_status()
 					warnx("User abort\n");
 					break;
 				}
-			}
+			}	*/
 			usleep(600000);
 		}
 	}

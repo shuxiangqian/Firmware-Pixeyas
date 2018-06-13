@@ -153,7 +153,7 @@ int px4_simple_app_main(int argc, char *argv[]) {
 				printf("=========Press CTRL+C to abort=========\n");
 			}
 		}
-		char c;
+		/*char c;
 		struct pollfd fds1;
 		int ret;
 		fds1.fd = 0;
@@ -165,7 +165,7 @@ int px4_simple_app_main(int argc, char *argv[]) {
 				warnx("User abort\n");
 				break;
 			}
-		}
+		}*/
 		usleep(300000);
 	}
 

@@ -332,7 +332,11 @@ void handle_message(mavlink_message_t *rc_message)
 	_rc.values[ 0] = rc.chancount > 0 ?  rc.chan1_raw : UINT16_MAX;
 	_rc.values[ 1] = rc.chancount > 0 ?  rc.chan2_raw : UINT16_MAX;
 	_rc.values[ 2] = rc.chancount > 0 ?  rc.chan3_raw : UINT16_MAX;
+	//by fxk
+	//_rc.values[ 3] =1502;
+
 	_rc.values[ 3] = rc.chancount > 0 ?  rc.chan4_raw : UINT16_MAX;
+
 	_rc.values[ 4] = rc.chancount > 0 ?  rc.chan5_raw : UINT16_MAX;
 	_rc.values[ 5] = rc.chancount > 0 ?  rc.chan6_raw : UINT16_MAX;
 	_rc.values[ 6] = rc.chancount > 0 ?  rc.chan7_raw : UINT16_MAX;

@@ -570,9 +570,17 @@ pwm_main(int argc, char *argv[])
 
 		warnx("Press CTRL-C or 'c' to abort.");
 
+		// servo_count = 6
 		while (1) {
 			for (unsigned i = 0; i < servo_count; i++) {
 				if (set_mask & 1 << i) {
+//					if(i == 1){
+//						ret = ioctl(fd, PWM_SERVO_SET(3), pwm_value);
+//					}else if(i == 3){
+//						ret = ioctl(fd, PWM_SERVO_SET(1), pwm_value);
+//					}else{
+//						ret = ioctl(fd, PWM_SERVO_SET(i), pwm_value);
+//					}
 					ret = ioctl(fd, PWM_SERVO_SET(i), pwm_value);
 
 					if (ret != OK) {

@@ -714,36 +714,64 @@ void BlockLocalPositionEstimator::publishLocalPos()
 	    PX4_ISFINITE(_x(X_vx)) && PX4_ISFINITE(_x(X_vy))
 	    && PX4_ISFINITE(_x(X_vz))) {
 		_pub_lpos.get().timestamp = _timeStamp;
-		_pub_lpos.get().xy_valid = _validXY;
-		_pub_lpos.get().z_valid = _validZ;
-		_pub_lpos.get().v_xy_valid = _validXY;
-		_pub_lpos.get().v_z_valid = _validZ;
-		_pub_lpos.get().x = xLP(X_x); 	// north
-		_pub_lpos.get().y = xLP(X_y);  	// east
+//		_pub_lpos.get().xy_valid = _validXY;
+//		_pub_lpos.get().z_valid = _validZ;
+//		_pub_lpos.get().v_xy_valid = _validXY;
+//		_pub_lpos.get().v_z_valid = _validZ;
+//		_pub_lpos.get().x = xLP(X_x); 	// north
+//		_pub_lpos.get().y = xLP(X_y);  	// east
+		_pub_lpos.get().xy_valid = true;
+		_pub_lpos.get().z_valid = true;
+		_pub_lpos.get().v_xy_valid = true;
+		_pub_lpos.get().v_z_valid = true;
+		_pub_lpos.get().x = 0; 		// north
+		_pub_lpos.get().y = 0;  	// east
 
 		if (_pub_agl_z.get()) {
-			_pub_lpos.get().z = -_aglLowPass.getState(); // agl
+//			_pub_lpos.get().z = -_aglLowPass.getState(); // agl
+			_pub_lpos.get().z = 2;
 
 		} else {
-			_pub_lpos.get().z = xLP(X_z); 	// down
+//			_pub_lpos.get().z = xLP(X_z); 	// down
+			_pub_lpos.get().z = 2;
 		}
 
-		//_pub_lpos.get().z = 10;
-		_pub_lpos.get().vx = xLP(X_vx); // north
-		_pub_lpos.get().vy = xLP(X_vy); // east
-		_pub_lpos.get().vz = xLP(X_vz); // down
+//		_pub_lpos.get().vx = xLP(X_vx); 	// north
+//		_pub_lpos.get().vy = xLP(X_vy); 	// east
+//		_pub_lpos.get().vz = xLP(X_vz); 	// down
+//
+//		_pub_lpos.get().yaw = _eul(2);
+//		_pub_lpos.get().xy_global = _validXY;
+//		_pub_lpos.get().z_global = _baroInitialized;
+//		_pub_lpos.get().ref_timestamp = _timeStamp;
+//		_pub_lpos.get().ref_lat = _map_ref.lat_rad * 180 / M_PI;
+//		_pub_lpos.get().ref_lon = _map_ref.lon_rad * 180 / M_PI;
+//		_pub_lpos.get().ref_alt = _altOrigin;
+//		_pub_lpos.get().dist_bottom = _aglLowPass.getState();
+//		_pub_lpos.get().dist_bottom_rate = - xLP(X_vz);
+//		_pub_lpos.get().surface_bottom_timestamp = _timeStamp;
+//		// we estimate agl even when we don't have terrain info
+//		// if you are in terrain following mode this is important
+//		// so that if terrain estimation fails there isn't a
+//		// sudden altitude jump
+//		_pub_lpos.get().dist_bottom_valid = _validZ;
+//		_pub_lpos.get().eph = eph;
+//		_pub_lpos.get().epv = epv;
+//		_pub_lpos.update();
+
+		//------------------------------shuxiangqian-----------------------------
+		_pub_lpos.get().vx = xLP(X_vx); 	// north
+		_pub_lpos.get().vy = xLP(X_vy); 	// east
+		_pub_lpos.get().vz = xLP(X_vz); 	// down
 
 		_pub_lpos.get().yaw = _eul(2);
 		_pub_lpos.get().xy_global = _validXY;
 		_pub_lpos.get().z_global = _baroInitialized;
-		//_pub_lpos.get().z_global = 10;
 		_pub_lpos.get().ref_timestamp = _timeStamp;
 		_pub_lpos.get().ref_lat = _map_ref.lat_rad * 180 / M_PI;
 		_pub_lpos.get().ref_lon = _map_ref.lon_rad * 180 / M_PI;
 		_pub_lpos.get().ref_alt = _altOrigin;
-		//_pub_lpos.get().ref_alt = 10;
 		_pub_lpos.get().dist_bottom = _aglLowPass.getState();
-		//_pub_lpos.get().dist_bottom = 10;
 		_pub_lpos.get().dist_bottom_rate = - xLP(X_vz);
 		_pub_lpos.get().surface_bottom_timestamp = _timeStamp;
 		// we estimate agl even when we don't have terrain info
@@ -751,10 +779,10 @@ void BlockLocalPositionEstimator::publishLocalPos()
 		// so that if terrain estimation fails there isn't a
 		// sudden altitude jump
 		_pub_lpos.get().dist_bottom_valid = _validZ;
-		//_pub_lpos.get().dist_bottom_valid = 10;
 		_pub_lpos.get().eph = eph;
 		_pub_lpos.get().epv = epv;
 		_pub_lpos.update();
+		//-----------------------------------------------------------------------
 	}
 }
 

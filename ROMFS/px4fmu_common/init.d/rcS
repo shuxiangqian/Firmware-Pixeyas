@@ -181,14 +181,14 @@ then
 
 	#
 	# Set parameters and env variables for selected AUTOSTART
-	#
+	# SYS_AUTOSTART = 4001
 	if param compare SYS_AUTOSTART 0
 	then
 	else
 		sh /etc/init.d/rc.autostart
 	fi
 	unset MODE
-
+	
 	#
 	# Wipe incompatible settings for boards not having two outputs
 	if ver hwcmp PX4FMU_V4
@@ -619,7 +619,7 @@ then
 	# mb12xx sonar sensor
 	# if param compare SENS_EN_MB12XX 1
 	# then
-		mb12xx start
+	#	mb12xx start
 	# fi
 
 	# teraranger one tof sensor
@@ -627,6 +627,7 @@ then
 	then
 		trone start
 	fi
+	
 
 	if ver hwcmp PX4FMU_V4
 	then
@@ -778,6 +779,7 @@ then
 				set MAV_TYPE 3
 			fi
 		fi
+		
 
 		# Still no MAV_TYPE found
 		if [ $MAV_TYPE == none ]
@@ -785,15 +787,17 @@ then
 			echo "Unknown MAV_TYPE"
 			param set MAV_TYPE 2
 		else
-			param set MAV_TYPE $MAV_TYPE
+			param set MAV_TYPE $MAV_TYPE	
 		fi
 
 		# Load mixer and configure outputs
 		sh /etc/init.d/rc.interface
-
+		
 		# Start standard multicopter apps
-		sh /etc/init.d/rc.mc_apps
+		sh /etc/init.d/rc.mc_apps		
+		
 	fi
+	
 
 	#
 	# VTOL setup
@@ -952,6 +956,7 @@ then
 fi
 unset EXIT_ON_END
 mavlink start -r 20000 -m config -b 921600 -d /dev/ttyS2
-sonargroup_service start
-mc_alt_estimator start
-mavlink stream -r 50 -s SONARGROUP -u 14556
+# sonargroup_service start
+# mc_alt_estimator start
+# mavlink stream -r 50 -s SONARGROUP -u 14556
+

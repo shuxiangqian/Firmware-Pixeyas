@@ -501,7 +501,6 @@ PWMSim::task_main()
 				    outputs.output[i] <= 1.0f) {
 					/* scale for PWM output 1000 - 2000us */
 					outputs.output[i] = 1500 + (500 * outputs.output[i]);
-
 				} else {
 					/*
 					 * Value is NaN, INF or out of band - set to the minimum value.
@@ -511,7 +510,6 @@ PWMSim::task_main()
 					outputs.output[i] = 900;
 				}
 			}
-
 
 			/* and publish for anyone that cares to see */
 			orb_publish(ORB_ID(actuator_outputs), _outputs_pub, &outputs);

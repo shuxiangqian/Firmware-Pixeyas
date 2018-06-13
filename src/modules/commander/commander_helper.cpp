@@ -237,7 +237,7 @@ void tune_negative(bool use_buzzer)
 	blink_msg_end = hrt_absolute_time() + BLINK_MSG_TIME;
 	rgbled_set_color(RGBLED_COLOR_RED);
 	rgbled_set_mode(RGBLED_MODE_BLINK_FAST);
-
+//	rgbled_set_mode(RGBLED_MODE_BLINK_SLOW);
 	if (use_buzzer) {
 		set_tune(TONE_NOTIFY_NEGATIVE_TUNE);
 	}

@@ -124,6 +124,8 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 set(PX4_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PX4_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
+set( CMAKE_CXX_FLAGS "-std=c++11 -O3" )
+
 execute_process(
 	COMMAND Tools/check_submodules.sh
 	WORKING_DIRECTORY ${PX4_SOURCE_DIR}

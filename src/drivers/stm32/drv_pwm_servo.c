@@ -68,6 +68,7 @@
 #include <stm32.h>
 #include <stm32_tim.h>
 
+
 int up_pwm_servo_set(unsigned channel, servo_position_t value)
 {
 	return io_timer_set_ccr(channel, value);
@@ -78,6 +79,7 @@ servo_position_t up_pwm_servo_get(unsigned channel)
 	return io_channel_get_ccr(channel);
 }
 
+// run
 int up_pwm_servo_init(uint32_t channel_mask)
 {
 	/* Init channels */

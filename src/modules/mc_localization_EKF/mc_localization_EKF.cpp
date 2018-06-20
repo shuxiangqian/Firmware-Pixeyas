@@ -39,6 +39,7 @@ int task_main(int argc, char *argv[]);
 //以下宏定义为室内定位算法需要用到的调节参数
 #define PI							3.1415926
 #define SONAR_NUMBER_SET 			4				//超声波数量设置
+
 #define RAY_NUMBER_SET   			5				//超声波射线模型中射线数，目前可选参数包括1/3/5/7/21
 #define MAP_NUMBER_SET   			13				//先验地图维数，目前可选参数包括4/13/25
 
@@ -85,6 +86,7 @@ bool Bigger(const POINTF &p1, const POINTF &p2); // judge the point p1 is bigger
 float Cross_product(const POINTF &p1, const POINTF &p2);          // 计算两向量外积
 void Swap(float &f1, float &f2);              // swap the value of f1 and f2
 void Swap_struct(POINTF &p1, POINTF &p2);  // swap the position of p1 and p2
+
 void ctrlStateUpdate(bool&);
 void distanceSensorUpdate(bool&);
 
@@ -180,7 +182,6 @@ void Swap_struct(POINTF &p1, POINTF &p2) {
 //		//no intersection.
 //	}
 //}
-
 //判定两线段位置关系，并求出交点(如果存在)。返回值交于线上(2)，正交(1)，无交(0)
 float Intersection(POINTF p1, POINTF p2, POINTF p3, POINTF p4,
 		POINTF &intersection_point) {
@@ -255,6 +256,7 @@ void sonar_value_minimum(POINTF location, float yaw,
 	_distance_theory[2] = 7;
 	_distance_theory[3] = 7;
 
+
 	ray_angle[0] = -1;
 	ray_angle[1] = -1;
 	ray_angle[2] = -1;
@@ -264,6 +266,7 @@ void sonar_value_minimum(POINTF location, float yaw,
 	wall_angle[1] = -1;
 	wall_angle[2] = -1;
 	wall_angle[3] = -1;
+
 	/*
 	 sonar_map_label用于存储有交点的超声波射线和地图线段，首先全部赋值-1
 	 当对应位置有交点时，则以交点编号和位置数据替换
@@ -291,7 +294,6 @@ void sonar_value_minimum(POINTF location, float yaw,
 		sin_value = sin(90 * i * PI / 180);
 
 		for (int j = 0; j < RAY_NUMBER_SET; j++) {
-
 			_sonar_end_point_rotation.x = (_sonar_model.x[j] * cos_yaw)
 					- (_sonar_model.y[j] * sin_yaw);
 			_sonar_end_point_rotation.y = (_sonar_model.x[j] * sin_yaw)
@@ -306,9 +308,9 @@ void sonar_value_minimum(POINTF location, float yaw,
 					+ (_sonar_end_point_rotation.x * sin_value)
 					+ (_sonar_end_point_rotation.y * cos_value);
 
+
 //			angle = atan2((_sonar_end_point.y - _sonar_start_point.y),
 //					(_sonar_end_point.x - _sonar_start_point.x));
-
 			//由点_sonar_start_point和点_sonar_end_point计算得到穿过两点的直线para_a*x + para_b*y + para_c
 			calculateline(_sonar_start_point, _sonar_end_point, para_a, para_b,
 					para_c);
@@ -316,6 +318,7 @@ void sonar_value_minimum(POINTF location, float yaw,
 			_distance_theory_temp = 10;
 
 			for (int k = 1; k < MAP_NUMBER_SET; k++) {
+
 
 				_map_start_point.x = _map_test.x[k - 1]; //the start point of map line
 				_map_start_point.y = _map_test.y[k - 1]; //the start point of map line
@@ -340,6 +343,7 @@ void sonar_value_minimum(POINTF location, float yaw,
 					Intersection(_sonar_start_point, _sonar_end_point,
 							_map_start_point, _map_end_point,
 							_intersection_point);
+
 //					Intersection(_sonar_start_point, _sonar_end_point, angle,
 //							_map_start_point, _map_end_point,
 //							_intersection_point, _distance_theory_temp);
@@ -441,6 +445,120 @@ int task_main(int argc, char *argv[]) {
 	warnx("mc_localization_EKF is successful!\n");
 	//线程启动标志
 	task_running = true;
+
+	warnx("mc_localization_EKF start successfully\n");
+
+// Load the prior map，加载地图模型
+
+	if (MAP_NUMBER_SET == 4) {
+		//4维的地图
+		auto map_data_boundary_x = std::initializer_list<float>(
+				{ 0.00, 6, 6, 0 });
+		std::copy(map_data_boundary_x.begin(), map_data_boundary_x.end(),
+				_map_test.x);
+		auto map_data_boundary_y = std::initializer_list<float>( { 0.00, 0.00,
+				7.5, 7.5 });
+		std::copy(map_data_boundary_y.begin(), map_data_boundary_y.end(),
+				_map_test.y);
+	}
+
+	if (MAP_NUMBER_SET == 13) {
+		//13维的地图
+		auto map_data_boundary_x = std::initializer_list<float>( { 0, 6.30,
+				6.30, 0, 0, -1.95, -1.95, -11, -11, -1.95, -1.95, 0, 0 });
+		std::copy(map_data_boundary_x.begin(), map_data_boundary_x.end(),
+				_map_test.x);
+
+		auto map_data_boundary_y = std::initializer_list<float>( { 0, 0, 7.26,
+				7.26, 14.26, 14.26, 5.23, 5.23, 2.03, 2.03, -7.00, -7.00, 0 });
+		std::copy(map_data_boundary_y.begin(), map_data_boundary_y.end(),
+				_map_test.y);
+	}
+
+	if (MAP_NUMBER_SET == 25) {
+		//25维的地图
+		auto map_data_boundary_x = std::initializer_list<float>( { 0, 6.30,
+				6.30, 0, 0, -1.95, -1.95, -11, -11, -9.75, -9.75, -8.60, -8.60,
+				-7.10, -7.10, -5.95, -5.95, -4.45, -4.45, -3.30, -3.30, -1.95,
+				-1.95, 0, 0 });
+		std::copy(map_data_boundary_x.begin(), map_data_boundary_x.end(),
+				_map_test.x);
+
+		auto map_data_boundary_y = std::initializer_list<float>( { 0, 0, 7.26,
+				7.26, 14.26, 14.26, 5.23, 5.23, 2.03, 2.03, 1.48, 1.48, 2.03,
+				2.03, 1.48, 1.48, 2.03, 2.03, 1.48, 1.48, 2.03, 2.03, -7.00,
+				-7.00, 0 });
+		std::copy(map_data_boundary_y.begin(), map_data_boundary_y.end(),
+				_map_test.y);
+	}
+
+// Load the srf01 sonar model，加载超声波射线模型
+
+	if (RAY_NUMBER_SET == 1) {
+		//1根射线模型
+		auto sonar_data_x = std::initializer_list<float>( { 6.00 });
+		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
+		auto sonar_data_y = std::initializer_list<float>( { 0.00 });
+		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
+	}
+
+	if (RAY_NUMBER_SET == 3) {
+		//3根射线模型
+		auto sonar_data_x = std::initializer_list<float>( { 1.00, 6.00, 1.00 });
+		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
+		auto sonar_data_y = std::initializer_list<float>( { -0.2, 0.00, 0.2 });
+		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
+	}
+
+	if (RAY_NUMBER_SET == 5) {
+		//5根射线模型
+		auto sonar_data_x = std::initializer_list<float>( { 1.00, 3.50, 6.00,
+				1.00, 3.50 });
+		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
+		auto sonar_data_y = std::initializer_list<float>( { -0.2, -0.1375, 0,
+				0.2, 0.1375 });
+		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
+	}
+
+	if (RAY_NUMBER_SET == 7) {
+		//7根射线模型
+		auto sonar_data_x = std::initializer_list<float>( { 1.00, 2.00, 3.50,
+				6.00, 1.00, 2.00, 3.50 });
+		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
+		auto sonar_data_y = std::initializer_list<float>( { -0.2, -0.135,
+				-0.1375, 0, 0.2, 0.135, 0.1375 });
+		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
+	}
+
+	if (RAY_NUMBER_SET == 21) {
+		//21根射线模型
+		auto sonar_data_x = std::initializer_list<float>( { 0.60, 1.00, 1.50,
+				2.00, 2.50, 3.00, 3.50, 4.00, 4.50, 5.00, 6.00, 0.60, 1.00,
+				1.50, 2.00, 2.50, 3.00, 3.50, 4.00, 4.50, 5.00 });
+		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
+
+		auto sonar_data_y = std::initializer_list<float>( { -0.015, -0.2, -0.19,
+				-0.135, -0.15, -0.1575, -0.1375, -0.03, -0.04, -0.005, 0, 0.015,
+				0.2, 0.19, 0.135, 0.15, 0.1575, 0.1375, 0.03, 0.04, 0.005 });
+		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
+	}
+	
+
+	_ctrl_state_sub = orb_subscribe(ORB_ID(control_state));  // subscribe the control state
+	_sonar_sub_fd = orb_subscribe(ORB_ID(sonar_distance));   // subscribe sonar data
+	// Initialize the estimation location
+	math::Matrix<2, 1> point_estimation;
+	point_estimation(0, 0) = POINT_ESTIMATION_X_SET;
+	point_estimation(1, 0) = POINT_ESTIMATION_Y_SET;
+	math::Matrix<2, 1> point_previous;
+	point_previous(0, 0) = POINT_PREVIOUS_X_SET;
+	point_previous(1, 0) = POINT_PREVIOUS_Y_SET;
+	math::Matrix<4, 1> sonarvalue_reality;
+	math::Matrix<4, 10> sonar_map_label;
+	//任务循环
+	while (!task_should_exit) {
+		usleep(5000);
+		
 	warnx("mc_localization_EKF start successfully\n");
 
 	//rc_channels
@@ -614,8 +732,10 @@ int mc_localization_EKF_main(int argc, char *argv[]) {
 			return 0;
 		}
 		task_should_exit = false;
+
 		control_task = px4_task_spawn_cmd("mc_localization_EKF", SCHED_DEFAULT,
 		SCHED_PRIORITY_MAX - 5, 4000, task_main,
+
 				(argv) ? (char * const *) &argv[2] : (char * const *) NULL);
 		return (0);
 	}
@@ -684,4 +804,5 @@ static void usage(const char *reason) {
 			"usage: pos_estimator_sonar_imu {start|stop|status} [param]\n\n");
 	exit(1);
 }
+
 

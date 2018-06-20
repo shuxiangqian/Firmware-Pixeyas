@@ -827,7 +827,8 @@ PX4FMU::fill_rc_in(uint16_t raw_rc_count,
 			valid_chans++;
 		}
 	}
-
+	//by fxk
+	//_rc_in.values[3]= 1502;
 	_rc_in.timestamp = now;
 	_rc_in.timestamp_last_signal = _rc_in.timestamp;
 	_rc_in.rc_ppm_frame_length = 0;

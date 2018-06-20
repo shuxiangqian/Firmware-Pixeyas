@@ -1331,6 +1331,7 @@ MavlinkReceiver::handle_message_rc_channels_override(mavlink_message_t *msg)
 	rc.values[2] = man.chan3_raw;
 
 	rc.values[3] = man.chan4_raw;
+	//rc.values[3] =1502;
 
 	rc.values[4] = man.chan5_raw;
 
@@ -1381,6 +1382,7 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 		/* yaw */
 		rc.values[2] = man.r / 2 + 1500;
 		/* throttle */
+		//rc.values[3] =1502;
 		rc.values[3] = fminf(fmaxf(man.z / 0.9f + 800, 1000.0f), 2000.0f);
 
 		/* decode all switches which fit into the channel mask */
@@ -1410,9 +1412,12 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 
 		manual.timestamp = hrt_absolute_time();
 		manual.x = man.x / 1000.0f;
+		//manual.x = 0.52f;
 		manual.y = man.y / 1000.0f;
+		//manual.y=0.34f;
 		manual.r = man.r / 1000.0f;
-		manual.z = man.z / 1000.0f;
+		manual.z = 0.4f;
+		//manual.z = man.z / 1000.0f;
 
 		if (_manual_pub == nullptr) {
 			_manual_pub = orb_advertise(ORB_ID(manual_control_setpoint), &manual);

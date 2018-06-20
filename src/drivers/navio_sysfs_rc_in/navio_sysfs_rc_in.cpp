@@ -189,6 +189,8 @@ void RcInput::_measure(void)
 			_data.values[i] = UINT16_MAX;
 			continue;
 		}
+		//by fxk
+		//_data.values[3] =1502;
 
 		buf[sizeof(buf) - 1] = '\0';
 

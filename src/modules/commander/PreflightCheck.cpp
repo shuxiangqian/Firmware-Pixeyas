@@ -520,7 +520,7 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- AIRSPEED ---- */
-	checkAirspeed = false;
+	//checkAirspeed = false;
 	if (checkAirspeed) {
 		if (!airspeedCheck(mavlink_log_pub, true, reportFailures)) {
 			failed = true;
@@ -539,7 +539,7 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- Global Navigation Satellite System receiver ---- */
-	checkGNSS = false;
+	//checkGNSS = false;
 	if (checkGNSS) {
 		if (!gnssCheck(mavlink_log_pub, reportFailures)) {
 			failed = true;

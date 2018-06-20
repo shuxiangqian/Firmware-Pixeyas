@@ -19,8 +19,6 @@
 
 extern "C" __EXPORT int mc_alt_estimator_main(int argc, char *argv[]);
 
-//
-
 static bool thread_should_exit = false;
 static bool thread_running = false;
 static int daemon_task;

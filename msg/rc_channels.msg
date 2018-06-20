@@ -23,6 +23,7 @@ uint8 RC_CHANNELS_FUNCTION_KILLSWITCH=20
 uint8 RC_CHANNELS_FUNCTION_TRANSITION=21
 uint8 RC_CHANNELS_FUNCTION_GEAR=22
 
+
 uint64 timestamp_last_valid					# Timestamp of last valid RC signal
 float32[18] channels						# Scaled to -1..1 (throttle: 0..1)
 uint8 channel_count						# Number of valid channels

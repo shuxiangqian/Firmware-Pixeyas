@@ -528,6 +528,7 @@ bool preflightCheck(orb_advert_t *mavlink_log_pub, bool checkMag, bool checkAcc,
 	}
 
 	/* ---- RC CALIBRATION ---- */
+	checkRC = false;
 	if (checkRC) {
 		if (rc_calibration_check(mavlink_log_pub, reportFailures, isVTOL) != OK) {
 			if (reportFailures) {

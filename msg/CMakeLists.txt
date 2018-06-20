@@ -123,6 +123,7 @@ set(msg_file_names
 	vehicle_roi.msg
 	sonar_distance.msg
 	alt_estimate.msg
+	ekf_localization.msg
 	#alt_ctrl.msg
 	)
 

@@ -926,6 +926,7 @@ Sensors::parameters_update()
 
 	/* update RC function mappings */
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_THROTTLE] = _parameters.rc_map_throttle - 1;
+
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_ROLL] = _parameters.rc_map_roll - 1;
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_PITCH] = _parameters.rc_map_pitch - 1;
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_YAW] = _parameters.rc_map_yaw - 1;
@@ -1897,7 +1898,7 @@ Sensors::get_rc_value(uint8_t func, float min_value, float max_value)
 		}
 
 	} else {
-		return 0.0f;
+		return 0;
 	}
 }
 
@@ -2042,6 +2043,7 @@ Sensors::rc_poll()
 			 *
 			 * DO NOT REMOVE OR ALTER STEP 1!
 			 */
+			//此处_parameters.dz就是设定的上限值，
 			if (rc_input.values[i] > (_parameters.trim[i] + _parameters.dz[i])) {
 				_rc.channels[i] = (rc_input.values[i] - _parameters.trim[i] - _parameters.dz[i]) / (float)(
 							  _parameters.max[i] - _parameters.trim[i] - _parameters.dz[i]);
@@ -2053,6 +2055,10 @@ Sensors::rc_poll()
 			} else {
 				/* in the configured dead zone, output zero */
 				_rc.channels[i] = 0.0f;
+				//在上限为7,下限为-8的情况下，parameters.trim=7，parameters.dz=7,
+				//_parameters.trim[i] + _parameters.dz[i]=7
+				//by fxk
+				//_rc.channels[i] = _rc.channels[3];
 			}
 
 			_rc.channels[i] *= _parameters.rev[i];
@@ -2060,6 +2066,7 @@ Sensors::rc_poll()
 			/* handle any parameter-induced blowups */
 			if (!PX4_ISFINITE(_rc.channels[i])) {
 				_rc.channels[i] = 0.0f;
+
 			}
 		}
 
@@ -2091,7 +2098,9 @@ Sensors::rc_poll()
 			manual.y = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_ROLL, -1.0, 1.0);
 			manual.x = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_PITCH, -1.0, 1.0);
 			manual.r = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_YAW, -1.0, 1.0);
+			//manual.z = 0.2f;
 			manual.z = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_THROTTLE, 0.0, 1.0);
+//			manual.z = 0.4545f*get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_THROTTLE, -1.0, 1.0)+0.6237f;
 			manual.flaps = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_FLAPS, -1.0, 1.0);
 			manual.aux1 = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_AUX_1, -1.0, 1.0);
 			manual.aux2 = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_AUX_2, -1.0, 1.0);
@@ -2565,6 +2574,24 @@ int sensors_main(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "status")) {
+		/****************added by fxk***************/
+							int _rc_sub = orb_subscribe(ORB_ID(input_rc));
+							struct rc_input_values my_rc;
+
+							int _rc_channel_sub =orb_subscribe(ORB_ID(rc_channels));
+							struct rc_channels_s my_rc_channel;
+
+				while(1)
+				{	orb_copy(ORB_ID(rc_channels), _rc_channel_sub, &my_rc_channel);
+					orb_copy(ORB_ID(input_rc), _rc_sub, &my_rc);
+					//warnx("rc.value[0]=%d	rc.value[1]=%d	rc.value[2]=%d	rc.value[3]=%d	rc.value[4]=%d",(uint16_t)my_rc.values[0],(uint16_t)my_rc.values[1],(uint16_t)my_rc.values[2],(uint16_t)my_rc.values[3],(uint16_t)my_rc.values[4]);
+					//warnx("rc.channel[0]=%f		rc.channels[1]=%f	rc.channels[2]=%f	rc.channels[3]=%f	rc.channels[4]=%f",(double)my_rc_channel.channels[0],(double)my_rc_channel.channels[1],(double)my_rc_channel.channels[2],(double)my_rc_channel.channels[3],(double)my_rc_channel.channels[4]);
+					//warnx("rc.fun_thrust=%f		rc.fun_pitch=%f		rc.fun_roll=%f",(float)my_rc_channel.channels[0],(float)my_rc_channel.channels[1],(float)my_rc_channel.channels[3]);
+					warnx("channels[0]=%f		channels[1]=%f		channels[3]=%f",(double)my_rc_channel.channels[0],(double)my_rc_channel.channels[1],(double)my_rc_channel.channels[3]);
+					usleep(800000);		//500ms
+
+				}
+				/******************************************/
 		if (sensors::g_sensors) {
 			sensors::g_sensors->print_status();
 			return 0;
@@ -2573,6 +2600,7 @@ int sensors_main(int argc, char *argv[])
 			PX4_INFO("not running");
 			return 1;
 		}
+
 	}
 
 	PX4_ERR("unrecognized command");

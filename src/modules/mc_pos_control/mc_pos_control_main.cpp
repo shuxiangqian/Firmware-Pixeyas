@@ -95,7 +95,8 @@
 #define MANUAL_THROTTLE_MAX_MULTICOPTER	0.9f
 #define ONE_G	9.8066f
 
-float ref_height1,height1;
+float ref_height1,height1,mytest;
+int myflag=0;
 //float thrust1,alt_sp1,alt_now1;
 uint64_t time1,time2,time_cha;
 unsigned int count1=0;
@@ -840,7 +841,7 @@ MulticopterPositionControl::limit_pos_sp_offset()
 	}
 }
 
-// PID
+ //PID
 //void
 //MulticopterPositionControl::caculate_thrust(float *thrust)
 //{
@@ -1062,129 +1063,127 @@ MulticopterPositionControl::limit_pos_sp_offset()
 void
 MulticopterPositionControl::caculate_thrust(float *thrust)
 {
-
+	//_manual.z=1.0f;
+//	float error=0;
+//	float height;
+//	static float Integral;
+//	static float error_pre=0;
+//	static float ref_height;
+//	static bool flag_auto_first=true;		//first
+//	static float current_thrust;
+//	static float thrust_pre;
+//	static float u0 = 0.0f;					//平衡点推力
+//	static int count = 0;
+//	static bool ctrl_flag = false,alt_flag = false;
+//	float P,D;		//比例、微分项
+//
+//	bool updated;		// estimate
+//	bool updated1;		// sonar
+//
+//	orb_check(_sonar_sub, &updated1);
+//	if(updated1)
+//	{
+//		time1=hrt_absolute_time()/1000;
+//		time_cha=time1-time2;
+//		time2=time1;
+//		count1++;
+//		orb_copy(ORB_ID(sonar_distance), _sonar_sub, &sonar);
+//	}
+//	orb_check(_alt_estimate_sub, &updated);
+//	if(updated)
+//	{
+//		orb_copy(ORB_ID(alt_estimate), _alt_estimate_sub, &alt);
+//		if(alt.flag == true)
+//		{
+//			ctrl_flag = true;
+//			alt_flag = true;
+//			count = 0;
+//		}
+//		else
+//		{
+//			alt_flag = false;
+//			ctrl_flag = false;
+//			count++;
+//			if(count == 10)
+//			{
+//				ctrl_flag = true;
+//
+//			}
+//		}
+//	}
+//
+//	if(_manual.z<0.5f||_manual.z>0.5f)		//manual control
+//	{
+//		*thrust = _manual.z;
+//		if(*thrust>0.95f)
+//			*thrust=0.95f;
+//		ref_height = sonar.distance_filter*0.01f;
+//		ref_height = alt.altitude;
+//		ref_height1 = ref_height;		//debug
+//		current_thrust = *thrust;
+//		error_pre = 0;
+//		flag_auto_first = true;
+//		Integral = 0;
+//	}
+//	else			//auto altitude control
+//	{
+//		if(flag_auto_first)
+//		{
+//			flag_auto_first = false;
+//			*thrust = current_thrust;
+//			thrust_pre = *thrust;
+//			u0 = current_thrust;
+//		}
+//		else
+//		{
+//			if(ctrl_flag == true)
+//			{
+//				if(alt_flag == true)
+//				{
+//					height = alt.alt_with_sonar;
+//				}
+//				else
+//				{
+//					height  = alt.altitude;
+//				}
+//				//height1 = height;			//debug
+//				error=ref_height-height;
+//
+//				Integral+=_params.vel_i(2)*error;
+//				if(Integral>0.1f)
+//					Integral = 0.1f;
+//				else if(Integral<-0.1f)
+//					Integral = -0.1f;
+//
+//				P = _params.vel_p(2)*error;
+//				D = _params.vel_d(2)*(error-error_pre);
+//
+////				if(D > 0.03f)
+////					D = 0.03f;
+////				else if(D < -0.03f)
+////					D = -0.03f;
+//				//*thrust = u0-_params.vel_p(2)*thrust_pre+_params.vel_i(2)*error-_params.vel_d(2)*error_pre+Integral;
+//
+//				*thrust = u0+P+Integral+D;
+//				*thrust = _manual.z;
+//				if(*thrust>0.95f)
+//					*thrust = 0.95f;
+//				else if(*thrust<0.6f)
+//					*thrust = 0.6f;
+//
+//				error_pre = error;
+//				thrust_pre = *thrust;
+//
+//				_att_sp.z_sp = ref_height;
+//
+//			}
+//			else
+//			{
+//				*thrust = thrust_pre;
+//			}
+//		}
+//	}
 	*thrust = _manual.z;
-
-	return;
-
-	float error=0;
-	float height;
-	static float Integral=0,error_pre=0;
-	static float ref_height;
-	static bool flag_auto_first=true;		//first
-	static float current_thrust;
-	static float thrust_pre;
-	static float u0 = 0.0f;					//平衡点推力
-	static int count = 0;
-	static bool ctrl_flag = false,alt_flag = false;
-	float P,D;		//比例、微分项
-
-	bool updated;		// estimate
-	bool updated1;		// sonar
-
-	orb_check(_sonar_sub, &updated1);
-	if(updated1)
-	{
-		time1=hrt_absolute_time()/1000;
-		time_cha=time1-time2;
-		time2=time1;
-		count1++;
-		orb_copy(ORB_ID(sonar_distance), _sonar_sub, &sonar);
-	}
-	orb_check(_alt_estimate_sub, &updated);
-	if(updated)
-	{
-		orb_copy(ORB_ID(alt_estimate), _alt_estimate_sub, &alt);
-		if(alt.flag == true)
-		{
-			ctrl_flag = true;
-			alt_flag = true;
-			count = 0;
-		}
-		else
-		{
-			alt_flag = false;
-			ctrl_flag = false;
-			count++;
-			if(count == 10)
-			{
-				ctrl_flag = true;
-
-			}
-		}
-	}
-
-	if(_manual.z<0.5f||_manual.z>0.5f)		//manual control
-	{
-		*thrust = _manual.z;
-		if(*thrust>0.95f)
-			*thrust=0.95f;
-		ref_height = sonar.distance_filter*0.01f;
-		//ref_height = alt.altitude;
-		ref_height1 = ref_height;		//debug
-		current_thrust = *thrust;
-		error_pre = 0;
-		flag_auto_first = true;
-		Integral = 0;
-	}
-	else			//auto altitude control
-	{
-		if(flag_auto_first)
-		{
-			flag_auto_first = false;
-			*thrust = current_thrust;
-			thrust_pre = *thrust;
-			u0 = current_thrust;
-		}
-		else
-		{
-			if(ctrl_flag == true)
-			{
-				if(alt_flag == true)
-				{
-					height = alt.alt_with_sonar;
-				}
-				else
-				{
-					height  = alt.altitude;
-				}
-				//height1 = height;			//debug
-				error=ref_height-height;
-
-				Integral+=_params.vel_i(2)*error;
-				if(Integral>0.1f)
-					Integral = 0.1f;
-				else if(Integral<-0.1f)
-					Integral = -0.1f;
-
-				P = _params.vel_p(2)*error;
-				D = _params.vel_d(2)*(error-error_pre);
-
-//				if(D > 0.03f)
-//					D = 0.03f;
-//				else if(D < -0.03f)
-//					D = -0.03f;
-				//*thrust = u0-_params.vel_p(2)*thrust_pre+_params.vel_i(2)*error-_params.vel_d(2)*error_pre+Integral;
-
-				*thrust = u0+P+Integral+D;
-
-				if(*thrust>0.95f)
-					*thrust = 0.95f;
-				else if(*thrust<0.6f)
-					*thrust = 0.6f;
-
-				error_pre = error;
-				thrust_pre = *thrust;
-
-				_att_sp.z_sp = ref_height;
-
-			}
-			else
-			{
-				*thrust = thrust_pre;
-			}
-		}
-	}
 }
 void
 MulticopterPositionControl::control_manual(float dt)
@@ -2525,10 +2524,10 @@ MulticopterPositionControl::task_main()
 			}	*/
 
 			if (_att_sp_pub != nullptr) {
-//				caculate_thrust(&_att_sp.thrust);
+				caculate_thrust(&_att_sp.thrust);
 				//alt_ctrl_s.thrust=_att_sp.thrust;
 				//orb_publish(ORB_ID(alt_ctrl),&_alt_ctrl_pub, &alt_ctrl_s);
-				_att_sp.thrust=0.14f;
+				//_att_sp.thrust=0.4f;
 				orb_publish(_attitude_setpoint_id, _att_sp_pub, &_att_sp);
 
 			} else if (_attitude_setpoint_id) {
@@ -2660,13 +2659,17 @@ int mc_pos_control_main(int argc, char *argv[])
 						//warnx("thrust=%.2f alt_sp=%.2f alt_now=%.2f",(double)thrust1,(double)alt_sp1,(double)alt_now1);
 						warnx("Alt:ref_height=%.2f,height=%.2f",(double)ref_height1,(double)height1);
 						warnx("Manual:x=%.2f,y=%.2f,z=%.2f",(double)manual.x,(double)manual.y,(double)manual.z);
+						warnx("_att_sp.rollbody=%.2f,_att_sp.pitchbody=%.2f",(double)v_att_sp.roll_body,(double)v_att_sp.pitch_body);
 						//warnx("Position:x=%.2f,y=%.2f,z=%.2f",(double)position.x,(double)position.y,(double)position.z);
 						//warnx("Position:ref_z=%.2f",(double)position.ref_alt);
 						warnx("att_sp:thrust=%.2f   rates_thrust_sp=%.2f",(double)v_att_sp.thrust,(double)v_rates_sp.thrust);
 						//printf("flag_auto=%d\n",flag_auto);
+						warnx("yaokongqi：%.2f",(double)mytest);
+						warnx("flag=%d",(int)myflag);
 				//	}
 				//}
 				warnx("============press CTRL+C to abort============");
+
 				char c;
 				struct pollfd fds;
 				int ret;

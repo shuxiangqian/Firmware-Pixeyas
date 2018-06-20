@@ -97,7 +97,7 @@ set(config_module_list
 	# Estimation modules
 	#
 	modules/attitude_estimator_q
-	modules/position_estimator_inav
+	#modules/position_estimator_inav
 	#modules/local_position_estimator
 	modules/ekf2
 
@@ -160,9 +160,9 @@ set(config_module_list
 
 	# pixeyas-specific modules
 	# sonar group
-	drivers/sonar_group_service
-	modules/mc_alt_estimator
-	#modules/mc_localization_EKF
+	# drivers/sonar_group_service
+	#modules/mc_alt_estimator
+	modules/mc_localization_EKF
 	
 	#
 	# Demo apps
@@ -170,11 +170,11 @@ set(config_module_list
 	#examples/math_demo
 	# Tutorial code from
 	# https://px4.io/dev/px4_simple_app
-	examples/px4_simple_app
+	 examples/px4_simple_app
 
 	# Tutorial code from
 	# https://px4.io/dev/daemon
-	#examples/px4_daemon_app
+	 examples/px4_daemon_app
 
 	# Tutorial code from
 	# https://px4.io/dev/debug_values

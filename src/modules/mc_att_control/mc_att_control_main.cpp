@@ -89,12 +89,16 @@
 #include <lib/geo/geo.h>
 #include <lib/tailsitter_recovery/tailsitter_recovery.h>
 
-
 /**
  * Multicopter attitude control app start / stop handling function
  *
  * @ingroup apps
  */
+
+//---------debug--------
+//float att_control[4];
+//---------debug--------
+
 extern "C" __EXPORT int mc_att_control_main(int argc, char *argv[]);
 
 #define YAW_DEADZONE	0.05f
@@ -108,8 +112,9 @@ extern "C" __EXPORT int mc_att_control_main(int argc, char *argv[]);
 #define AXIS_INDEX_YAW 2
 #define AXIS_COUNT 3
 
-class MulticopterAttitudeControl
-{
+//uint64_t time1, time2, dT;
+
+class MulticopterAttitudeControl {
 public:
 	/**
 	 * Constructor
@@ -126,54 +131,54 @@ public:
 	 *
 	 * @return		OK on success.
 	 */
-	int		start();
+	int start();
 
 private:
 
-	bool	_task_should_exit;		/**< if true, task_main() should exit */
-	int		_control_task;			/**< task handle */
+	bool _task_should_exit; /**< if true, task_main() should exit */
+	int _control_task; /**< task handle */
 
-	int		_ctrl_state_sub;		/**< control state subscription */
-	int		_v_att_sp_sub;			/**< vehicle attitude setpoint subscription */
-	int		_v_rates_sp_sub;		/**< vehicle rates setpoint subscription */
-	int		_v_control_mode_sub;	/**< vehicle control mode subscription */
-	int		_params_sub;			/**< parameter updates subscription */
-	int		_manual_control_sp_sub;	/**< manual control setpoint subscription */
-	int		_armed_sub;				/**< arming status subscription */
-	int		_vehicle_status_sub;	/**< vehicle status subscription */
-	int 	_motor_limits_sub;		/**< motor limits subscription */
+	int _ctrl_state_sub; /**< control state subscription */
+	int _v_att_sp_sub; /**< vehicle attitude setpoint subscription */
+	int _v_rates_sp_sub; /**< vehicle rates setpoint subscription */
+	int _v_control_mode_sub; /**< vehicle control mode subscription */
+	int _params_sub; /**< parameter updates subscription */
+	int _manual_control_sp_sub; /**< manual control setpoint subscription */
+	int _armed_sub; /**< arming status subscription */
+	int _vehicle_status_sub; /**< vehicle status subscription */
+	int _motor_limits_sub; /**< motor limits subscription */
 
-	orb_advert_t	_v_rates_sp_pub;		/**< rate setpoint publication */
-	orb_advert_t	_actuators_0_pub;		/**< attitude actuator controls publication */
-	orb_advert_t	_controller_status_pub;	/**< controller status publication */
+	orb_advert_t _v_rates_sp_pub; /**< rate setpoint publication */
+	orb_advert_t _actuators_0_pub; /**< attitude actuator controls publication */
+	orb_advert_t _controller_status_pub; /**< controller status publication */
 
-	orb_id_t _rates_sp_id;	/**< pointer to correct rates setpoint uORB metadata structure */
-	orb_id_t _actuators_id;	/**< pointer to correct actuator controls0 uORB metadata structure */
+	orb_id_t _rates_sp_id; /**< pointer to correct rates setpoint uORB metadata structure */
+	orb_id_t _actuators_id; /**< pointer to correct actuator controls0 uORB metadata structure */
 
-	bool		_actuators_0_circuit_breaker_enabled;	/**< circuit breaker to suppress output */
+	bool _actuators_0_circuit_breaker_enabled; /**< circuit breaker to suppress output */
 
-	struct control_state_s				_ctrl_state;		/**< control state */
-	struct vehicle_attitude_setpoint_s	_v_att_sp;			/**< vehicle attitude setpoint */
-	struct vehicle_rates_setpoint_s		_v_rates_sp;		/**< vehicle rates setpoint */
-	struct manual_control_setpoint_s	_manual_control_sp;	/**< manual control setpoint */
-	struct vehicle_control_mode_s		_v_control_mode;	/**< vehicle control mode */
-	struct actuator_controls_s			_actuators;			/**< actuator controls */
-	struct actuator_armed_s				_armed;				/**< actuator arming status */
-	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
-	struct multirotor_motor_limits_s	_motor_limits;		/**< motor limits */
-	struct mc_att_ctrl_status_s 		_controller_status; /**< controller status */
+	struct control_state_s _ctrl_state; /**< control state */
+	struct vehicle_attitude_setpoint_s _v_att_sp; /**< vehicle attitude setpoint */
+	struct vehicle_rates_setpoint_s _v_rates_sp; /**< vehicle rates setpoint */
+	struct manual_control_setpoint_s _manual_control_sp; /**< manual control setpoint */
+	struct vehicle_control_mode_s _v_control_mode; /**< vehicle control mode */
+	struct actuator_controls_s _actuators; /**< actuator controls */
+	struct actuator_armed_s _armed; /**< actuator arming status */
+	struct vehicle_status_s _vehicle_status; /**< vehicle status */
+	struct multirotor_motor_limits_s _motor_limits; /**< motor limits */
+	struct mc_att_ctrl_status_s _controller_status; /**< controller status */
 
-	perf_counter_t	_loop_perf;			/**< loop performance counter */
-	perf_counter_t	_controller_latency_perf;
+	perf_counter_t _loop_perf; /**< loop performance counter */
+	perf_counter_t _controller_latency_perf;
 
-	math::Vector<3>		_rates_prev;	/**< angular rates on previous step */
-	math::Vector<3>		_rates_sp_prev; /**< previous rates setpoint */
-	math::Vector<3>		_rates_sp;		/**< angular rates setpoint */
-	math::Vector<3>		_rates_int;		/**< angular rates integral error */
-	float				_thrust_sp;		/**< thrust setpoint */
-	math::Vector<3>		_att_control;	/**< attitude control vector */
+	math::Vector<3> _rates_prev; /**< angular rates on previous step */
+	math::Vector<3> _rates_sp_prev; /**< previous rates setpoint */
+	math::Vector<3> _rates_sp; /**< angular rates setpoint */
+	math::Vector<3> _rates_int; /**< angular rates integral error */
+	float _thrust_sp; /**< thrust setpoint */
+	math::Vector<3> _att_control; /**< attitude control vector */
 
-	math::Matrix<3, 3>  _I;				/**< identity matrix */
+	math::Matrix<3, 3> _I; /**< identity matrix */
 
 	struct {
 		param_t roll_p;
@@ -210,133 +215,124 @@ private:
 		param_t vtol_opt_recovery_enabled;
 		param_t vtol_wv_yaw_rate_scale;
 
-	}		_params_handles;		/**< handles for interesting parameters */
+	} _params_handles; /**< handles for interesting parameters */
 
 	struct {
-		math::Vector<3> att_p;					/**< P gain for angular error */
-		math::Vector<3> rate_p;				/**< P gain for angular rate error */
-		math::Vector<3> rate_i;				/**< I gain for angular rate error */
-		math::Vector<3> rate_d;				/**< D gain for angular rate error */
-		math::Vector<3>	rate_ff;			/**< Feedforward gain for desired rates */
-		float yaw_ff;						/**< yaw control feed-forward */
+		math::Vector<3> att_p; /**< P gain for angular error */
+		math::Vector<3> rate_p; /**< P gain for angular rate error */
+		math::Vector<3> rate_i; /**< I gain for angular rate error */
+		math::Vector<3> rate_d; /**< D gain for angular rate error */
+		math::Vector<3> rate_ff; /**< Feedforward gain for desired rates */
+		float yaw_ff; /**< yaw control feed-forward */
 
-		float tpa_breakpoint;				/**< Throttle PID Attenuation breakpoint */
-		float tpa_slope;					/**< Throttle PID Attenuation slope */
+		float tpa_breakpoint; /**< Throttle PID Attenuation breakpoint */
+		float tpa_slope; /**< Throttle PID Attenuation slope */
 
 		float roll_rate_max;
 		float pitch_rate_max;
 		float yaw_rate_max;
 		float yaw_auto_max;
-		math::Vector<3> mc_rate_max;		/**< attitude rate limits in stabilized modes */
-		math::Vector<3> auto_rate_max;		/**< attitude rate limits in auto modes */
-		math::Vector<3> acro_rate_max;		/**< max attitude rates in acro mode */
+		math::Vector<3> mc_rate_max; /**< attitude rate limits in stabilized modes */
+		math::Vector<3> auto_rate_max; /**< attitude rate limits in auto modes */
+		math::Vector<3> acro_rate_max; /**< max attitude rates in acro mode */
 		float rattitude_thres;
-		int vtol_type;						/**< 0 = Tailsitter, 1 = Tiltrotor, 2 = Standard airframe */
+		int vtol_type; /**< 0 = Tailsitter, 1 = Tiltrotor, 2 = Standard airframe */
 		bool vtol_opt_recovery_enabled;
-		float vtol_wv_yaw_rate_scale;			/**< Scale value [0, 1] for yaw rate setpoint  */
-	}		_params;
+		float vtol_wv_yaw_rate_scale; /**< Scale value [0, 1] for yaw rate setpoint  */
+	} _params;
 
-	TailsitterRecovery *_ts_opt_recovery;	/**< Computes optimal rates for tailsitter recovery */
+	TailsitterRecovery *_ts_opt_recovery; /**< Computes optimal rates for tailsitter recovery */
 
 	/**
 	 * Update our local parameter cache.
 	 */
-	int			parameters_update();
+	int parameters_update();
 
 	/**
 	 * Check for parameter update and handle it.
 	 */
-	void		parameter_update_poll();
+	void parameter_update_poll();
 
 	/**
 	 * Check for changes in vehicle control mode.
 	 */
-	void		vehicle_control_mode_poll();
+	void vehicle_control_mode_poll();
 
 	/**
 	 * Check for changes in manual inputs.
 	 */
-	void		vehicle_manual_poll();
+	void vehicle_manual_poll();
 
 	/**
 	 * Check for attitude setpoint updates.
 	 */
-	void		vehicle_attitude_setpoint_poll();
+	void vehicle_attitude_setpoint_poll();
 
 	/**
 	 * Check for rates setpoint updates.
 	 */
-	void		vehicle_rates_setpoint_poll();
+	void vehicle_rates_setpoint_poll();
 
 	/**
 	 * Check for arming status updates.
 	 */
-	void		arming_status_poll();
+	void arming_status_poll();
 
 	/**
 	 * Attitude controller.
 	 */
-	void		control_attitude(float dt);
+	void control_attitude(float dt);
 
 	/**
 	 * Attitude rates controller.
 	 */
-	void		control_attitude_rates(float dt);
+	void control_attitude_rates(float dt);
 
 	/**
 	 * Check for vehicle status updates.
 	 */
-	void		vehicle_status_poll();
+	void vehicle_status_poll();
 
 	/**
 	 * Check for vehicle motor limits status.
 	 */
-	void		vehicle_motor_limits_poll();
+	void vehicle_motor_limits_poll();
 
 	/**
 	 * Shim for calling task_main from task_create.
 	 */
-	static void	task_main_trampoline(int argc, char *argv[]);
+	static void task_main_trampoline(int argc, char *argv[]);
 
 	/**
 	 * Main attitude control task.
 	 */
-	void		task_main();
+	void task_main();
 };
 
-namespace mc_att_control
-{
+namespace mc_att_control {
 
-MulticopterAttitudeControl	*g_control;
+MulticopterAttitudeControl *g_control;
 }
 
 MulticopterAttitudeControl::MulticopterAttitudeControl() :
 
-	_task_should_exit(false),
-	_control_task(-1),
+		_task_should_exit(false), _control_task(-1),
 
-	/* subscriptions */
-	_ctrl_state_sub(-1),
-	_v_att_sp_sub(-1),
-	_v_control_mode_sub(-1),
-	_params_sub(-1),
-	_manual_control_sp_sub(-1),
-	_armed_sub(-1),
-	_vehicle_status_sub(-1),
+		/* subscriptions */
+		_ctrl_state_sub(-1), _v_att_sp_sub(-1), _v_control_mode_sub(-1), _params_sub(
+				-1), _manual_control_sp_sub(-1), _armed_sub(-1), _vehicle_status_sub(
+				-1),
 
-	/* publications */
-	_v_rates_sp_pub(nullptr),
-	_actuators_0_pub(nullptr),
-	_controller_status_pub(nullptr),
-	_rates_sp_id(0),
-	_actuators_id(0),
+		/* publications */
+		_v_rates_sp_pub(nullptr), _actuators_0_pub(nullptr), _controller_status_pub(
+				nullptr), _rates_sp_id(0), _actuators_id(0),
 
-	_actuators_0_circuit_breaker_enabled(false),
+		_actuators_0_circuit_breaker_enabled(false),
 
-	/* performance counters */
-	_loop_perf(perf_alloc(PC_ELAPSED, "mc_att_control")),
-	_controller_latency_perf(perf_alloc_once(PC_ELAPSED, "ctrl_latency")),
-	_ts_opt_recovery(nullptr)
+		/* performance counters */
+		_loop_perf(perf_alloc(PC_ELAPSED, "mc_att_control")), _controller_latency_perf(
+				perf_alloc_once(PC_ELAPSED, "ctrl_latency")), _ts_opt_recovery(
+				nullptr)
 
 {
 	memset(&_ctrl_state, 0, sizeof(_ctrl_state));
@@ -367,7 +363,6 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 	_params.vtol_opt_recovery_enabled = false;
 	_params.vtol_wv_yaw_rate_scale = 1.0f;
 
-
 	_rates_prev.zero();
 	_rates_sp.zero();
 	_rates_sp_prev.zero();
@@ -377,40 +372,37 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 
 	_I.identity();
 
-	_params_handles.roll_p			= 	param_find("MC_ROLL_P");
-	_params_handles.roll_rate_p		= 	param_find("MC_ROLLRATE_P");
-	_params_handles.roll_rate_i		= 	param_find("MC_ROLLRATE_I");
-	_params_handles.roll_rate_d		= 	param_find("MC_ROLLRATE_D");
-	_params_handles.roll_rate_ff	= 	param_find("MC_ROLLRATE_FF");
-	_params_handles.pitch_p			= 	param_find("MC_PITCH_P");
-	_params_handles.pitch_rate_p	= 	param_find("MC_PITCHRATE_P");
-	_params_handles.pitch_rate_i	= 	param_find("MC_PITCHRATE_I");
-	_params_handles.pitch_rate_d	= 	param_find("MC_PITCHRATE_D");
-	_params_handles.pitch_rate_ff 	= 	param_find("MC_PITCHRATE_FF");
-	_params_handles.tpa_breakpoint 	= 	param_find("MC_TPA_BREAK");
-	_params_handles.tpa_slope	 	= 	param_find("MC_TPA_SLOPE");
-	_params_handles.yaw_p			=	param_find("MC_YAW_P");
-	_params_handles.yaw_rate_p		= 	param_find("MC_YAWRATE_P");
-	_params_handles.yaw_rate_i		= 	param_find("MC_YAWRATE_I");
-	_params_handles.yaw_rate_d		= 	param_find("MC_YAWRATE_D");
-	_params_handles.yaw_rate_ff	 	= 	param_find("MC_YAWRATE_FF");
-	_params_handles.yaw_ff			= 	param_find("MC_YAW_FF");
-	_params_handles.roll_rate_max	= 	param_find("MC_ROLLRATE_MAX");
-	_params_handles.pitch_rate_max	= 	param_find("MC_PITCHRATE_MAX");
-	_params_handles.yaw_rate_max	= 	param_find("MC_YAWRATE_MAX");
-	_params_handles.yaw_auto_max	= 	param_find("MC_YAWRAUTO_MAX");
-	_params_handles.acro_roll_max	= 	param_find("MC_ACRO_R_MAX");
-	_params_handles.acro_pitch_max	= 	param_find("MC_ACRO_P_MAX");
-	_params_handles.acro_yaw_max	= 	param_find("MC_ACRO_Y_MAX");
-	_params_handles.rattitude_thres = 	param_find("MC_RATT_TH");
-	_params_handles.vtol_type 		= 	param_find("VT_TYPE");
-	_params_handles.roll_tc			= 	param_find("MC_ROLL_TC");
-	_params_handles.pitch_tc		= 	param_find("MC_PITCH_TC");
-	_params_handles.vtol_opt_recovery_enabled	= param_find("VT_OPT_RECOV_EN");
-	_params_handles.vtol_wv_yaw_rate_scale		= param_find("VT_WV_YAWR_SCL");
-
-
-
+	_params_handles.roll_p = param_find("MC_ROLL_P");
+	_params_handles.roll_rate_p = param_find("MC_ROLLRATE_P");
+	_params_handles.roll_rate_i = param_find("MC_ROLLRATE_I");
+	_params_handles.roll_rate_d = param_find("MC_ROLLRATE_D");
+	_params_handles.roll_rate_ff = param_find("MC_ROLLRATE_FF");
+	_params_handles.pitch_p = param_find("MC_PITCH_P");
+	_params_handles.pitch_rate_p = param_find("MC_PITCHRATE_P");
+	_params_handles.pitch_rate_i = param_find("MC_PITCHRATE_I");
+	_params_handles.pitch_rate_d = param_find("MC_PITCHRATE_D");
+	_params_handles.pitch_rate_ff = param_find("MC_PITCHRATE_FF");
+	_params_handles.tpa_breakpoint = param_find("MC_TPA_BREAK");
+	_params_handles.tpa_slope = param_find("MC_TPA_SLOPE");
+	_params_handles.yaw_p = param_find("MC_YAW_P");
+	_params_handles.yaw_rate_p = param_find("MC_YAWRATE_P");
+	_params_handles.yaw_rate_i = param_find("MC_YAWRATE_I");
+	_params_handles.yaw_rate_d = param_find("MC_YAWRATE_D");
+	_params_handles.yaw_rate_ff = param_find("MC_YAWRATE_FF");
+	_params_handles.yaw_ff = param_find("MC_YAW_FF");
+	_params_handles.roll_rate_max = param_find("MC_ROLLRATE_MAX");
+	_params_handles.pitch_rate_max = param_find("MC_PITCHRATE_MAX");
+	_params_handles.yaw_rate_max = param_find("MC_YAWRATE_MAX");
+	_params_handles.yaw_auto_max = param_find("MC_YAWRAUTO_MAX");
+	_params_handles.acro_roll_max = param_find("MC_ACRO_R_MAX");
+	_params_handles.acro_pitch_max = param_find("MC_ACRO_P_MAX");
+	_params_handles.acro_yaw_max = param_find("MC_ACRO_Y_MAX");
+	_params_handles.rattitude_thres = param_find("MC_RATT_TH");
+	_params_handles.vtol_type = param_find("VT_TYPE");
+	_params_handles.roll_tc = param_find("MC_ROLL_TC");
+	_params_handles.pitch_tc = param_find("MC_PITCH_TC");
+	_params_handles.vtol_opt_recovery_enabled = param_find("VT_OPT_RECOV_EN");
+	_params_handles.vtol_wv_yaw_rate_scale = param_find("VT_WV_YAWR_SCL");
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -420,11 +412,9 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 		_ts_opt_recovery = new TailsitterRecovery();
 	}
 
-
 }
 
-MulticopterAttitudeControl::~MulticopterAttitudeControl()
-{
+MulticopterAttitudeControl::~MulticopterAttitudeControl() {
 	if (_control_task != -1) {
 		/* task wakes up every 100ms or so at the longest */
 		_task_should_exit = true;
@@ -451,9 +441,7 @@ MulticopterAttitudeControl::~MulticopterAttitudeControl()
 	mc_att_control::g_control = nullptr;
 }
 
-int
-MulticopterAttitudeControl::parameters_update()
-{
+int MulticopterAttitudeControl::parameters_update() {
 	float v;
 
 	float roll_tc, pitch_tc;
@@ -535,18 +523,18 @@ MulticopterAttitudeControl::parameters_update()
 
 	int tmp;
 	param_get(_params_handles.vtol_opt_recovery_enabled, &tmp);
-	_params.vtol_opt_recovery_enabled = (bool)tmp;
+	_params.vtol_opt_recovery_enabled = (bool) tmp;
 
-	param_get(_params_handles.vtol_wv_yaw_rate_scale, &_params.vtol_wv_yaw_rate_scale);
+	param_get(_params_handles.vtol_wv_yaw_rate_scale,
+			&_params.vtol_wv_yaw_rate_scale);
 
-	_actuators_0_circuit_breaker_enabled = circuit_breaker_enabled("CBRK_RATE_CTRL", CBRK_RATE_CTRL_KEY);
+	_actuators_0_circuit_breaker_enabled = circuit_breaker_enabled(
+			"CBRK_RATE_CTRL", CBRK_RATE_CTRL_KEY);
 
 	return OK;
 }
 
-void
-MulticopterAttitudeControl::parameter_update_poll()
-{
+void MulticopterAttitudeControl::parameter_update_poll() {
 	bool updated;
 
 	/* Check if parameters have changed */
@@ -559,35 +547,31 @@ MulticopterAttitudeControl::parameter_update_poll()
 	}
 }
 
-void
-MulticopterAttitudeControl::vehicle_control_mode_poll()
-{
+void MulticopterAttitudeControl::vehicle_control_mode_poll() {
 	bool updated;
 
 	/* Check if vehicle control mode has changed */
 	orb_check(_v_control_mode_sub, &updated);
 
 	if (updated) {
-		orb_copy(ORB_ID(vehicle_control_mode), _v_control_mode_sub, &_v_control_mode);
+		orb_copy(ORB_ID(vehicle_control_mode), _v_control_mode_sub,
+				&_v_control_mode);
 	}
 }
 
-void
-MulticopterAttitudeControl::vehicle_manual_poll()
-{
+void MulticopterAttitudeControl::vehicle_manual_poll() {
 	bool updated;
 
 	/* get pilots inputs */
 	orb_check(_manual_control_sp_sub, &updated);
 
 	if (updated) {
-		orb_copy(ORB_ID(manual_control_setpoint), _manual_control_sp_sub, &_manual_control_sp);
+		orb_copy(ORB_ID(manual_control_setpoint), _manual_control_sp_sub,
+				&_manual_control_sp);
 	}
 }
 
-void
-MulticopterAttitudeControl::vehicle_attitude_setpoint_poll()
-{
+void MulticopterAttitudeControl::vehicle_attitude_setpoint_poll() {
 	/* check if there is a new setpoint */
 	bool updated;
 	orb_check(_v_att_sp_sub, &updated);
@@ -597,9 +581,7 @@ MulticopterAttitudeControl::vehicle_attitude_setpoint_poll()
 	}
 }
 
-void
-MulticopterAttitudeControl::vehicle_rates_setpoint_poll()
-{
+void MulticopterAttitudeControl::vehicle_rates_setpoint_poll() {
 	/* check if there is a new setpoint */
 	bool updated;
 	orb_check(_v_rates_sp_sub, &updated);
@@ -609,9 +591,7 @@ MulticopterAttitudeControl::vehicle_rates_setpoint_poll()
 	}
 }
 
-void
-MulticopterAttitudeControl::arming_status_poll()
-{
+void MulticopterAttitudeControl::arming_status_poll() {
 	/* check if there is a new setpoint */
 	bool updated;
 	orb_check(_armed_sub, &updated);
@@ -621,9 +601,7 @@ MulticopterAttitudeControl::arming_status_poll()
 	}
 }
 
-void
-MulticopterAttitudeControl::vehicle_status_poll()
-{
+void MulticopterAttitudeControl::vehicle_status_poll() {
 	/* check if there is new status information */
 	bool vehicle_status_updated;
 	orb_check(_vehicle_status_sub, &vehicle_status_updated);
@@ -645,15 +623,14 @@ MulticopterAttitudeControl::vehicle_status_poll()
 	}
 }
 
-void
-MulticopterAttitudeControl::vehicle_motor_limits_poll()
-{
+void MulticopterAttitudeControl::vehicle_motor_limits_poll() {
 	/* check if there is a new message */
 	bool updated;
 	orb_check(_motor_limits_sub, &updated);
 
 	if (updated) {
-		orb_copy(ORB_ID(multirotor_motor_limits), _motor_limits_sub, &_motor_limits);
+		orb_copy(ORB_ID(multirotor_motor_limits), _motor_limits_sub,
+				&_motor_limits);
 	}
 }
 
@@ -662,19 +639,19 @@ MulticopterAttitudeControl::vehicle_motor_limits_poll()
  * Input: 'vehicle_attitude_setpoint' topics (depending on mode)
  * Output: '_rates_sp' vector, '_thrust_sp'
  */
-void
-MulticopterAttitudeControl::control_attitude(float dt)
-{
+void MulticopterAttitudeControl::control_attitude(float dt) {
 	vehicle_attitude_setpoint_poll();
 
 	_thrust_sp = _v_att_sp.thrust;
 
 	/* construct attitude setpoint rotation matrix */
-	math::Quaternion q_sp(_v_att_sp.q_d[0], _v_att_sp.q_d[1], _v_att_sp.q_d[2], _v_att_sp.q_d[3]);
+	math::Quaternion q_sp(_v_att_sp.q_d[0], _v_att_sp.q_d[1], _v_att_sp.q_d[2],
+			_v_att_sp.q_d[3]);
 	math::Matrix<3, 3> R_sp = q_sp.to_dcm();
 
 	/* get current rotation matrix from control state quaternions */
-	math::Quaternion q_att(_ctrl_state.q[0], _ctrl_state.q[1], _ctrl_state.q[2], _ctrl_state.q[3]);
+	math::Quaternion q_att(_ctrl_state.q[0], _ctrl_state.q[1], _ctrl_state.q[2],
+			_ctrl_state.q[3]);
 	math::Matrix<3, 3> R = q_att.to_dcm();
 
 	/* all input data is ready, run controller itself */
@@ -714,7 +691,9 @@ MulticopterAttitudeControl::control_attitude(float dt)
 		e_R_cp(2, 1) = e_R_z_axis(0);
 
 		/* rotation matrix for roll/pitch only rotation */
-		R_rp = R * (_I + e_R_cp * e_R_z_sin + e_R_cp * e_R_cp * (1.0f - e_R_z_cos));
+		R_rp = R
+				* (_I + e_R_cp * e_R_z_sin
+						+ e_R_cp * e_R_cp * (1.0f - e_R_z_cos));
 
 	} else {
 		/* zero roll/pitch rotation */
@@ -731,7 +710,9 @@ MulticopterAttitudeControl::control_attitude(float dt)
 		 * calculate angle and axis for R -> R_sp rotation directly */
 		math::Quaternion q_error;
 		q_error.from_dcm(R.transposed() * R_sp);
-		math::Vector<3> e_R_d = q_error(0) >= 0.0f ? q_error.imag()  * 2.0f : -q_error.imag() * 2.0f;
+		math::Vector<3> e_R_d =
+				q_error(0) >= 0.0f ?
+						q_error.imag() * 2.0f : -q_error.imag() * 2.0f;
 
 		/* use fusion of Z axis based rotation and direct rotation */
 		float direct_w = e_R_z_cos * e_R_z_cos * yaw_w;
@@ -743,12 +724,15 @@ MulticopterAttitudeControl::control_attitude(float dt)
 
 	/* limit rates */
 	for (int i = 0; i < 3; i++) {
-		if ((_v_control_mode.flag_control_velocity_enabled || _v_control_mode.flag_control_auto_enabled) &&
-		    !_v_control_mode.flag_control_manual_enabled) {
-			_rates_sp(i) = math::constrain(_rates_sp(i), -_params.auto_rate_max(i), _params.auto_rate_max(i));
+		if ((_v_control_mode.flag_control_velocity_enabled
+				|| _v_control_mode.flag_control_auto_enabled)
+				&& !_v_control_mode.flag_control_manual_enabled) {
+			_rates_sp(i) = math::constrain(_rates_sp(i),
+					-_params.auto_rate_max(i), _params.auto_rate_max(i));
 
 		} else {
-			_rates_sp(i) = math::constrain(_rates_sp(i), -_params.mc_rate_max(i), _params.mc_rate_max(i));
+			_rates_sp(i) = math::constrain(_rates_sp(i),
+					-_params.mc_rate_max(i), _params.mc_rate_max(i));
 		}
 	}
 
@@ -756,10 +740,14 @@ MulticopterAttitudeControl::control_attitude(float dt)
 	_rates_sp(2) += _v_att_sp.yaw_sp_move_rate * yaw_w * _params.yaw_ff;
 
 	/* weather-vane mode, dampen yaw rate */
-	if ((_v_control_mode.flag_control_velocity_enabled || _v_control_mode.flag_control_auto_enabled) &&
-	    _v_att_sp.disable_mc_yaw_control == true && !_v_control_mode.flag_control_manual_enabled) {
-		float wv_yaw_rate_max = _params.auto_rate_max(2) * _params.vtol_wv_yaw_rate_scale;
-		_rates_sp(2) = math::constrain(_rates_sp(2), -wv_yaw_rate_max, wv_yaw_rate_max);
+	if ((_v_control_mode.flag_control_velocity_enabled
+			|| _v_control_mode.flag_control_auto_enabled)
+			&& _v_att_sp.disable_mc_yaw_control == true
+			&& !_v_control_mode.flag_control_manual_enabled) {
+		float wv_yaw_rate_max = _params.auto_rate_max(2)
+				* _params.vtol_wv_yaw_rate_scale;
+		_rates_sp(2) = math::constrain(_rates_sp(2), -wv_yaw_rate_max,
+				wv_yaw_rate_max);
 		// prevent integrator winding up in weathervane mode
 		_rates_int(2) = 0.0f;
 	}
@@ -770,9 +758,7 @@ MulticopterAttitudeControl::control_attitude(float dt)
  * Input: '_rates_sp' vector, '_thrust_sp'
  * Output: '_att_control' vector
  */
-void
-MulticopterAttitudeControl::control_attitude_rates(float dt)
-{
+void MulticopterAttitudeControl::control_attitude_rates(float dt) {
 	/* reset integral if disarmed */
 	if (!_armed.armed || !_vehicle_status.is_rotary_wing) {
 		_rates_int.zero();
@@ -785,27 +771,35 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	rates(2) = _ctrl_state.yaw_rate;
 
 	/* throttle pid attenuation factor */
-	float tpa =  fmaxf(0.0f, fminf(1.0f, 1.0f - _params.tpa_slope * (fabsf(_v_rates_sp.thrust) - _params.tpa_breakpoint)));
+	float tpa = fmaxf(0.0f,
+			fminf(1.0f,
+					1.0f
+							- _params.tpa_slope
+									* (fabsf(_v_rates_sp.thrust)
+											- _params.tpa_breakpoint)));
 
 	/* angular rates error */
 	math::Vector<3> rates_err = _rates_sp - rates;
 
-	_att_control = _params.rate_p.emult(rates_err * tpa) + _params.rate_d.emult(_rates_prev - rates) / dt + _rates_int +
-		       _params.rate_ff.emult(_rates_sp);
+	_att_control = _params.rate_p.emult(rates_err * tpa)
+			+ _params.rate_d.emult(_rates_prev - rates) / dt + _rates_int
+			+ _params.rate_ff.emult(_rates_sp);
 
 	_rates_sp_prev = _rates_sp;
 	_rates_prev = rates;
 
 	/* update integral only if not saturated on low limit and if motor commands are not saturated */
-	if (_thrust_sp > MIN_TAKEOFF_THRUST && !_motor_limits.lower_limit && !_motor_limits.upper_limit) {
+	if (_thrust_sp > MIN_TAKEOFF_THRUST && !_motor_limits.lower_limit
+			&& !_motor_limits.upper_limit) {
 		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 			if (fabsf(_att_control(i)) < _thrust_sp) {
-				float rate_i = _rates_int(i) + _params.rate_i(i) * rates_err(i) * dt;
+				float rate_i = _rates_int(i)
+						+ _params.rate_i(i) * rates_err(i) * dt;
 
 				if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
-				    _att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
-				    /* if the axis is the yaw axis, do not update the integral if the limit is hit */
-				    !((i == AXIS_INDEX_YAW) && _motor_limits.yaw)) {
+				_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
+				/* if the axis is the yaw axis, do not update the integral if the limit is hit */
+				!((i == AXIS_INDEX_YAW) && _motor_limits.yaw)) {
 					_rates_int(i) = rate_i;
 				}
 			}
@@ -813,15 +807,11 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	}
 }
 
-void
-MulticopterAttitudeControl::task_main_trampoline(int argc, char *argv[])
-{
+void MulticopterAttitudeControl::task_main_trampoline(int argc, char *argv[]) {
 	mc_att_control::g_control->task_main();
 }
 
-void
-MulticopterAttitudeControl::task_main()
-{
+void MulticopterAttitudeControl::task_main() {
 
 	/*
 	 * do subscriptions haha
@@ -894,8 +884,9 @@ MulticopterAttitudeControl::task_main()
 			 * or roll (yaw can rotate 360 in normal att control).  If both are true don't
 			 * even bother running the attitude controllers */
 			if (_v_control_mode.flag_control_rattitude_enabled) {
-				if (fabsf(_manual_control_sp.y) > _params.rattitude_thres ||
-				    fabsf(_manual_control_sp.x) > _params.rattitude_thres) {
+				if (fabsf(_manual_control_sp.y) > _params.rattitude_thres
+						|| fabsf(_manual_control_sp.x)
+								> _params.rattitude_thres) {
 					_v_control_mode.flag_control_attitude_enabled = false;
 				}
 			}
@@ -910,14 +901,19 @@ MulticopterAttitudeControl::task_main()
 				} else {
 					vehicle_attitude_setpoint_poll();
 					_thrust_sp = _v_att_sp.thrust;
-					math::Quaternion q(_ctrl_state.q[0], _ctrl_state.q[1], _ctrl_state.q[2], _ctrl_state.q[3]);
+					math::Quaternion q(_ctrl_state.q[0], _ctrl_state.q[1],
+							_ctrl_state.q[2], _ctrl_state.q[3]);
 					math::Quaternion q_sp(&_v_att_sp.q_d[0]);
-					_ts_opt_recovery->setAttGains(_params.att_p, _params.yaw_ff);
-					_ts_opt_recovery->calcOptimalRates(q, q_sp, _v_att_sp.yaw_sp_move_rate, _rates_sp);
+					_ts_opt_recovery->setAttGains(_params.att_p,
+							_params.yaw_ff);
+					_ts_opt_recovery->calcOptimalRates(q, q_sp,
+							_v_att_sp.yaw_sp_move_rate, _rates_sp);
 
 					/* limit rates */
 					for (int i = 0; i < 3; i++) {
-						_rates_sp(i) = math::constrain(_rates_sp(i), -_params.mc_rate_max(i), _params.mc_rate_max(i));
+						_rates_sp(i) = math::constrain(_rates_sp(i),
+								-_params.mc_rate_max(i),
+								_params.mc_rate_max(i));
 					}
 				}
 
@@ -941,9 +937,11 @@ MulticopterAttitudeControl::task_main()
 				/* attitude controller disabled, poll rates setpoint topic */
 				if (_v_control_mode.flag_control_manual_enabled) {
 					/* manual rates control - ACRO mode */
-					_rates_sp = math::Vector<3>(_manual_control_sp.y, -_manual_control_sp.x,
-								    _manual_control_sp.r).emult(_params.acro_rate_max);
-					_thrust_sp = math::min(_manual_control_sp.z, MANUAL_THROTTLE_MAX_MULTICOPTER);
+					_rates_sp = math::Vector<3>(_manual_control_sp.y,
+							-_manual_control_sp.x, _manual_control_sp.r).emult(
+							_params.acro_rate_max);
+					_thrust_sp = math::min(_manual_control_sp.z,
+					MANUAL_THROTTLE_MAX_MULTICOPTER);
 
 					/* publish attitude rates setpoint */
 					_v_rates_sp.roll = _rates_sp(0);
@@ -953,10 +951,12 @@ MulticopterAttitudeControl::task_main()
 					_v_rates_sp.timestamp = hrt_absolute_time();
 
 					if (_v_rates_sp_pub != nullptr) {
-						orb_publish(_rates_sp_id, _v_rates_sp_pub, &_v_rates_sp);
+						orb_publish(_rates_sp_id, _v_rates_sp_pub,
+								&_v_rates_sp);
 
 					} else if (_rates_sp_id) {
-						_v_rates_sp_pub = orb_advertise(_rates_sp_id, &_v_rates_sp);
+						_v_rates_sp_pub = orb_advertise(_rates_sp_id,
+								&_v_rates_sp);
 					}
 
 				} else {
@@ -989,44 +989,53 @@ MulticopterAttitudeControl::task_main()
 				if (!_actuators_0_circuit_breaker_enabled) {
 					if (_actuators_0_pub != nullptr) {
 
-						orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
+//						att_control[0] = _actuators.control[0];
+//						att_control[1] = _actuators.control[1];
+//						att_control[2] = _actuators.control[2];
+//						att_control[3] = _actuators.control[3];
+
+						orb_publish(_actuators_id, _actuators_0_pub,
+								&_actuators);
 						perf_end(_controller_latency_perf);
 
 					} else if (_actuators_id) {
-						_actuators_0_pub = orb_advertise(_actuators_id, &_actuators);
+						_actuators_0_pub = orb_advertise(_actuators_id,
+								&_actuators);
 					}
 
 				}
 
 				/* publish controller status */
 				if (_controller_status_pub != nullptr) {
-					orb_publish(ORB_ID(mc_att_ctrl_status), _controller_status_pub, &_controller_status);
+					orb_publish(ORB_ID(mc_att_ctrl_status),
+							_controller_status_pub, &_controller_status);
 
 				} else {
-					_controller_status_pub = orb_advertise(ORB_ID(mc_att_ctrl_status), &_controller_status);
+					_controller_status_pub = orb_advertise(
+							ORB_ID(mc_att_ctrl_status), &_controller_status);
 				}
 			}
 		}
 
 		perf_end(_loop_perf);
+
+//		time1 = hrt_absolute_time() / 1000;
+//		dT = time1 - time2;
+//		time2 = time1;
 	}
 
 	_control_task = -1;
 	return;
 }
 
-int
-MulticopterAttitudeControl::start()
-{
+int MulticopterAttitudeControl::start() {
 	ASSERT(_control_task == -1);
 
 	/* start the task */
-	_control_task = px4_task_spawn_cmd("mc_att_control",
-					   SCHED_DEFAULT,
-					   SCHED_PRIORITY_MAX - 5,
-					   1500,
-					   (px4_main_t)&MulticopterAttitudeControl::task_main_trampoline,
-					   nullptr);
+	_control_task = px4_task_spawn_cmd("mc_att_control", SCHED_DEFAULT,
+	SCHED_PRIORITY_MAX - 5, 1500,
+			(px4_main_t) &MulticopterAttitudeControl::task_main_trampoline,
+			nullptr);
 
 	if (_control_task < 0) {
 		warn("task start failed");
@@ -1036,8 +1045,7 @@ MulticopterAttitudeControl::start()
 	return OK;
 }
 
-int mc_att_control_main(int argc, char *argv[])
-{
+int mc_att_control_main(int argc, char *argv[]) {
 	if (argc < 2) {
 		warnx("usage: mc_att_control {start|stop|status}");
 		return 1;
@@ -1080,6 +1088,25 @@ int mc_att_control_main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "status")) {
 		if (mc_att_control::g_control) {
+			while (1) {
+//				printf("[att_q] time = %lld \n", dT);
+//				printf("[ATT] att0 = %.2f, att1 = %.2f, att2 = %.2f, att3 = %.2f,\n ",att_control[0],att_control[1],att_control[2],att_control[3]);
+				printf("==============press CTRL+C to abort==============\n");
+				char c;
+				struct pollfd fds;
+				int ret;
+				fds.fd = 0;
+				fds.events = POLLIN;
+				ret = poll(&fds, 1, 0);
+				if (ret > 0) {
+					read(0, &c, 1);
+					if (c == 0x03 || c == 0x63 || c == 'q') {
+						warnx("User abort\n");
+						break;
+					}
+				}
+				usleep(400000);		//500ms
+			}
 			warnx("running");
 			return 0;
 

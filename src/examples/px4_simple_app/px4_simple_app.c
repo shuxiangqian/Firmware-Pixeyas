@@ -53,36 +53,42 @@
 #include <uORB/topics/sonar_distance.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/distance_sensor.h>
+#include <uORB/topics/ekf_localization.h>
 //#include <uORB/topics/alt_ctrl.h>
 
 __EXPORT int px4_simple_app_main(int argc, char *argv[]);
 
 int px4_simple_app_main(int argc, char *argv[]) {
-	PX4_INFO("Hello Sky!");
+//	PX4_INFO("Hello Sky!");
 	/* advertise attitude topic */
 	//struct vehicle_attitude_s att;
 	//memset(&att, 0, sizeof(att));
 	//orb_advert_t att_pub = orb_advertise(ORB_ID(vehicle_attitude), &att);
 	//int sensor_sub_fd = orb_subscribe(ORB_ID(sonar_distance));
 	//int mb12xx_sub_fd = orb_subscribe(ORB_ID(distance_sensor));
-	int mb12xx_sub_fd0 = orb_subscribe_multi(ORB_ID(distance_sensor), 0);
+//	int mb12xx_sub_fd0 = orb_subscribe_multi(ORB_ID(distance_sensor), 0);
+//	int mb12xx_sub_fd0 = orb_subscribe_multi(ORB_ID(distance_sensor), 0);
 	//int mb12xx_sub_fd1 = orb_subscribe_multi(ORB_ID(distance_sensor), 1);
+	int sensor_sub_fd = orb_subscribe(ORB_ID(ekf_localization));
 
 	//orb_set_interval(sensor_sub_fd, 50);	// limit the update rate to 5 Hz
-	orb_set_interval(mb12xx_sub_fd0, 40);	// limit the update rate to 5 Hz
+//	orb_set_interval(sensor_sub_fd, 200);	// limit the update rate to 5 Hz
 	//orb_set_interval(mb12xx_sub_fd1, 10);	// limit the update rate to 5 Hz
 
 	//struct sonar_distance_s sonar;
 	//memset(&sonar, 0, sizeof(sonar));
 
-	struct distance_sensor_s mb12xx_data0;
-	memset(&mb12xx_data0, 0, sizeof(mb12xx_data0));
+//	struct distance_sensor_s mb12xx_data0;
+//	memset(&mb12xx_data0, 0, sizeof(mb12xx_data0));
+
+	struct ekf_localization_s mav_position;
+	memset(&mav_position, 0, sizeof(mav_position));
 
 	//struct distance_sensor_s mb12xx_data1;
 	//memset(&mb12xx_data1, 0, sizeof(mb12xx_data1));
 
 	//static uint64_t T0 = 0, T1 = 0,count0 = 0,count1 = 0;
-	static uint64_t T0 = 0, count0 = 0;
+//	static uint64_t T0 = 0, count0 = 0;
 
 	/*int sensor_sub_fd=orb_subscribe(ORB_ID(manual_control_setpoint));
 	 struct manual_control_setpoint_s manual;
@@ -90,7 +96,7 @@ int px4_simple_app_main(int argc, char *argv[]) {
 	/* one could wait for multiple topics with this technique, just using one here */
 	px4_pollfd_struct_t fds[] = {
 	//{ .fd = sensor_sub_fd,   .events = POLLIN },
-			{ .fd = mb12xx_sub_fd0, .events = POLLIN },
+			{ .fd = sensor_sub_fd, .events = POLLIN },
 	/* there could be more file descriptors here, in the form like:
 	 * { .fd = other_sub_fd,   .events = POLLIN },
 	 */
@@ -100,7 +106,7 @@ int px4_simple_app_main(int argc, char *argv[]) {
 
 	for (int i = 0; i < 1000; i++) {
 		/* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
-		int poll_ret = px4_poll(fds, 1, 70);
+		int poll_ret = px4_poll(fds, 1, 300);
 		/* handle the poll result */
 		if (poll_ret == 0) {
 			/* this means none of our providers is giving us data */
@@ -118,22 +124,25 @@ int px4_simple_app_main(int argc, char *argv[]) {
 				/* obtained data for the first file descriptor */
 				/* copy sensors raw data into local buffer */
 				//orb_copy(ORB_ID(sonar_distance), sensor_sub_fd, &sonar);
-				orb_copy(ORB_ID(distance_sensor), mb12xx_sub_fd0,
-						&mb12xx_data0);
+				orb_copy(ORB_ID(ekf_localization), sensor_sub_fd,
+						&mav_position);
 				//orb_copy(ORB_ID(distance_sensor), mb12xx_sub_fd1,
 				//		&mb12xx_data1);
 				//orb_copy(ORB_ID(alt_ctrl), alt_ctrl_sub_, &alt_control);
 
 				//printf("----------------------------------\n");
-				for (int j = 1; j <= 1; j++) {
+//				for (int j = 1; j <= 1; j++) {
 					//printf("[Sonar] Range (%d)=%d(cm)\n",j-1,sonar.distance[j-1]);
 					//printf("[Sonar] Status(%d)=%d\n",j-1,sonar.status[j-1]);
-					printf("[MB12xx0] dist1 = %.2f dist2 = %.2f\n",
-							(double) mb12xx_data0.distance[0],(double) mb12xx_data0.distance[1]);
-					printf("[MB12xx0] dist3 = %.2f dist4 = %.2f\n",
-							(double) mb12xx_data0.distance[2],(double) mb12xx_data0.distance[3]);
-					printf("[MB12xx0] dt = %.1f\n",
-							(double)((mb12xx_data0.timestamp-T0)/1000.0/(mb12xx_data0.count-count0)));
+//					printf("[MB12xx0] dist1 = %.2f dist2 = %.2f\n",
+//							(double) mb12xx_data0.distance[0],(double) mb12xx_data0.distance[1]);
+//					printf("[MB12xx0] dist3 = %.2f dist4 = %.2f\n",
+//							(double) mb12xx_data0.distance[2],(double) mb12xx_data0.distance[3]);
+//					printf("[MB12xx0] dt = %.1f\n",
+//							(double)((mb12xx_data0.timestamp-T0)/1000.0/(mb12xx_data0.count-count0)));
+					printf("[EKF] x = %.2f vx = %.2f y = %.2f vy = %.2f\n",
+							(double) mav_position.x, (double) mav_position.vx,
+							(double) mav_position.y, (double) mav_position.vy);
 //					printf("[MB12xx1] dist1 = %.2f T1 = %.1f \n",
 //							(double) mb12xx_data1.current_distance,
 //							(double)((mb12xx_data1.timestamp-T1)/1000.0/(mb12xx_data1.count-count1)));
@@ -141,10 +150,10 @@ int px4_simple_app_main(int argc, char *argv[]) {
 //							mb12xx_data0.timestamp/1000,mb12xx_data1.timestamp/1000,
 //							(mb12xx_data1.timestamp-mb12xx_data0.timestamp)/1000);
 					printf("-------------------------------\n");
-				}
-				T0 = mb12xx_data0.timestamp;
+//				}
+//				T0 = mb12xx_data0.timestamp;
 //				T1 = mb12xx_data1.timestamp;
-				count0 = mb12xx_data0.count;
+//				count0 = mb12xx_data0.count;
 //				count1 = mb12xx_data1.count;
 //				time1 = hrt_absolute_time()/1000;
 //				time_cha = time1-time2;
@@ -166,7 +175,7 @@ int px4_simple_app_main(int argc, char *argv[]) {
 				break;
 			}
 		}
-		usleep(300000);
+		usleep(400000);
 	}
 
 	PX4_INFO("exiting");

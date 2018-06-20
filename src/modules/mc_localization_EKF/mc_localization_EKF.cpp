@@ -10,11 +10,28 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/control_state.h>
 #include <uORB/topics/sonar_distance.h>
+#include <drivers/drv_hrt.h>
+#include <uORB/topics/ekf_localization.h>
+#include <uORB/topics/distance_sensor.h>	// mb12xx
 //#include <uORB/topics/sonar_distance_theory.h>
+
+// used for print; uncomment when no longer needed
+//double dist[4];
+//float RAY[4], WALL[4];
+//math::Matrix<2, 1> input;
+//math::Vector<3> ATT;
+//double H[4][4];
+//uint64_t time1, time2, dt;
+// --------------print---------------------
 
 static bool task_should_exit = false;
 static bool task_running = false;
 static int control_task;
+float _yaw;
+struct control_state_s sensor;
+struct distance_sensor_s distance;
+int _ctrl_state_sub; 						//control state subscription
+int _distance_sensor_sub;          		// four mb12xx sonar sensor data
 
 extern "C" __EXPORT int mc_localization_EKF_main(int argc, char *argv[]);
 int task_main(int argc, char *argv[]);
@@ -22,45 +39,31 @@ int task_main(int argc, char *argv[]);
 //以下宏定义为室内定位算法需要用到的调节参数
 #define PI							3.1415926
 #define SONAR_NUMBER_SET 			4				//超声波数量设置
-#define RAY_NUMBER_SET   			3				//超声波射线模型中射线数，目前可选参数包括1/3/5/7/21
-#define MAP_NUMBER_SET   			4				//先验地图维数，目前可选参数包括4/13/25
-#define LAMBDA_1_SET 	 			0.1				//调节参数1
-#define LAMBDA_2_SET     			0.9				//调节参数2
-#define ITERATION_MAX_SET     	    10				//非线性优化算法最大容许迭代次数
-#define ERROR_THRESHOLD             1e-4			//非线性优化算法误差允许阈值
-#define POINT_ESTIMATION_X_SET 		3.15			//初始估计位置x
-#define POINT_ESTIMATION_Y_SET 		5.5				//初始估计位置y
-#define POINT_PREVIOUS_X_SET   		3.15			//前一时刻估计位置x，数值必须和POINT_ESTIMATION_X_SET相同
-#define POINT_PREVIOUS_Y_SET   		5.5				//前一时刻估计位置y，数值必须和POINT_ESTIMATION_Y_SET相同
-#define LAMBDA_1_SQRTF 	 			sqrtf(LAMBDA_1_SET)
-#define LAMBDA_2_SQRTF 	 			sqrtf(LAMBDA_2_SET)
-
-int _ctrl_state_sub; 								//control state subscription
-float _sonar_sub_fd;          					// four srf01 sonar sensor data
-float _yaw; 										//yaw angle (euler)
-
-math::Matrix<3, 3> _R; 				// rotation matrix from attitude quaternions
-
-struct control_state_s _ctrl_state; 				//vehicle attitude
-struct sonar_distance_s sonar;    			// aim to get the srf01 sonar data
-
-//具体维数配合地图模型变化
+#define RAY_NUMBER_SET   			5				//超声波射线模型中射线数，目前可选参数包括1/3/5/7/21
+#define MAP_NUMBER_SET   			13				//先验地图维数，目前可选参数包括4/13/25
 
 struct PRIOR_MAP {
-	float x[MAP_NUMBER_SET];
-	float y[MAP_NUMBER_SET];
+	float x[MAP_NUMBER_SET] = { 0, 5, 5, 9, 9, 14, 14, 12, 12, 7, 7, 0, 0 };
+	float y[MAP_NUMBER_SET] = { 0, 0, 2, 2, 0, 0, 4, 4, 10, 10, 5, 5, 0 };
 };
 PRIOR_MAP _map_test;                          	// the prior map used for test
 
-//具体维数配合射线模型变化
-
 struct PRIOR_SONAR {
-	float x[RAY_NUMBER_SET];
-	float y[RAY_NUMBER_SET];
+	float x[RAY_NUMBER_SET] = { 1.00, 3.50, 6.00, 1.00, 3.50 };
+	float y[RAY_NUMBER_SET] = { -0.2, -0.1375, 0, 0.2, 0.1375 };
 };
 PRIOR_SONAR _sonar_model;                    	// the srf01 sonar sensor model
+
+float Wall_Angle[MAP_NUMBER_SET - 1] = { 0, PI / 2, 0, PI / 2, 0, PI / 2, 0, PI
+		/ 2, 0, PI / 2, 0, PI / 2 };
 //
 struct POINTF {
+	POINTF(float a, float b) :
+			x(a), y(b) {
+	}
+	POINTF() {
+	}
+
 	float x;
 	float y;
 };
@@ -82,21 +85,24 @@ bool Bigger(const POINTF &p1, const POINTF &p2); // judge the point p1 is bigger
 float Cross_product(const POINTF &p1, const POINTF &p2);          // 计算两向量外积
 void Swap(float &f1, float &f2);              // swap the value of f1 and f2
 void Swap_struct(POINTF &p1, POINTF &p2);  // swap the position of p1 and p2
+void ctrlStateUpdate(bool&);
+void distanceSensorUpdate(bool&);
 
 //判定两线段位置关系，并求出交点(如果存在)
 float Intersection(POINTF p1, POINTF p2, POINTF p3, POINTF p4,
 		POINTF &intersection_point);
 
+//void Intersection(POINTF, POINTF, double, POINTF, POINTF, POINTF &, float&);
+
 // the purpose of this function is to get the the minimum distance between the cross point and the sonar model origin
-void sonar_value_minimum(int sonar_number, int sonar_ray_number,
-		int map_point_number, POINTF location, float yaw,
+void sonar_value_minimum(POINTF location, float yaw,
 		math::Matrix<4, 10> &sonar_map_label,
-		math::Matrix<4, 1> &distance_theory_minimum);
+		math::Matrix<4, 1> &distance_theory_minimum, float[], float[]);
 
 //计算雅克比矩阵
-//此雅克比矩阵通过三角几何方法计算，目的是节省计算量
-void Jacobi_function_geometry(math::Matrix<4, 10> sonar_map_label,
-		math::Matrix<6, 2> &jacobian_array);
+//此雅克比矩阵通过几何方法计算，目的是节省计算量
+void caculateJacobi(math::Matrix<4, 1> &, float[], float[],
+		math::Matrix<4, 4> &);
 
 //此函数用于计算直线表达式，已知两点p1和p2，得到直线ax+by+c
 void calculateline(POINTF p1, POINTF p2, float &a, float &b, float &c) {
@@ -131,6 +137,49 @@ void Swap_struct(POINTF &p1, POINTF &p2) {
 	Swap(p1.x, p2.x);
 	Swap(p1.y, p2.y);
 }
+
+//void Intersection(POINTF _sonar_start, POINTF _sonar_end, double angle,
+//		POINTF _map_start, POINTF _map_end, POINTF &intersection_point,
+//		float& dist1) {
+//
+//	POINTF sonar1, v2(0, 0), v1(0, 0), v3;
+//	float distr_ray;
+//	//求方向向量
+//	sonar1 = POINTF(cos(angle), sin(angle));
+//	v1 = POINTF(_map_start.x - _sonar_start.x, _map_start.y - _sonar_start.y);
+//	v2 = POINTF(_map_end.x - _sonar_start.x, _map_end.y - _sonar_start.y);
+//	//计算lambda
+//	float lamb = -(v1.y * sonar1.x + v1.x * sonar1.y)
+//			/ (v2.x * sonar1.y + v2.y * sonar1.x);
+////    cout << "lamb = " << lamb << endl;
+//	//计算交点
+//	if (lamb >= 0) {
+//		intersection_point.x = (_map_start.x + lamb * _map_end.x) / (1 + lamb);
+//		intersection_point.y = (_map_start.y + lamb * _map_end.y) / (1 + lamb);
+//		v3 = POINTF(intersection_point.x - _sonar_start.x,
+//				intersection_point.y - _sonar_start.y);
+//		dist1 = sqrtf(v3.x * v3.x + v3.y * v3.y);
+//
+//		distr_ray = sqrtf(
+//				(_sonar_end.x - _sonar_start.x)
+//						* (_sonar_end.x - _sonar_start.x)
+//						+ (_sonar_end.y - _sonar_start.y)
+//								* (_sonar_end.y - _sonar_start.y));
+//
+//		if (dist1 > distr_ray + 0.0001f) {
+//			intersection_point.x = 1000;
+//			intersection_point.y = 1000;
+//		}
+//
+//		if (sonar1.x * v3.x + sonar1.y * v3.y < 0) {
+//			intersection_point.x = 1000;
+//			intersection_point.y = 1000;
+//		}
+//
+//	} else {
+//		//no intersection.
+//	}
+//}
 
 //判定两线段位置关系，并求出交点(如果存在)。返回值交于线上(2)，正交(1)，无交(0)
 float Intersection(POINTF p1, POINTF p2, POINTF p3, POINTF p4,
@@ -188,10 +237,10 @@ float Intersection(POINTF p1, POINTF p2, POINTF p3, POINTF p4,
 	return 1;
 }
 
-void sonar_value_minimum(int sonar_number, int sonar_ray_number,
-		int map_point_number, POINTF location, float yaw,
+void sonar_value_minimum(POINTF location, float yaw,
 		math::Matrix<4, 10> &sonar_map_label,
-		math::Matrix<4, 1> &distance_theory_minimum) {
+		math::Matrix<4, 1> &distance_theory_minimum, float ray_angle[],
+		float wall_angle[]) {
 
 	float _distance_theory[4];
 	float para_a;
@@ -206,6 +255,15 @@ void sonar_value_minimum(int sonar_number, int sonar_ray_number,
 	_distance_theory[2] = 7;
 	_distance_theory[3] = 7;
 
+	ray_angle[0] = -1;
+	ray_angle[1] = -1;
+	ray_angle[2] = -1;
+	ray_angle[3] = -1;
+
+	wall_angle[0] = -1;
+	wall_angle[1] = -1;
+	wall_angle[2] = -1;
+	wall_angle[3] = -1;
 	/*
 	 sonar_map_label用于存储有交点的超声波射线和地图线段，首先全部赋值-1
 	 当对应位置有交点时，则以交点编号和位置数据替换
@@ -228,11 +286,11 @@ void sonar_value_minimum(int sonar_number, int sonar_ray_number,
 	_sonar_start_point.x = location.x; //Initialize the sonar model position
 	_sonar_start_point.y = location.y; //Initialize the sonar model position
 
-	for (int i = 0; i < sonar_number; i++) {
+	for (int i = 0; i < SONAR_NUMBER_SET; i++) {
 		cos_value = cos(90 * i * PI / 180);
 		sin_value = sin(90 * i * PI / 180);
 
-		for (int j = 0; j < sonar_ray_number; j++) {
+		for (int j = 0; j < RAY_NUMBER_SET; j++) {
 
 			_sonar_end_point_rotation.x = (_sonar_model.x[j] * cos_yaw)
 					- (_sonar_model.y[j] * sin_yaw);
@@ -248,13 +306,16 @@ void sonar_value_minimum(int sonar_number, int sonar_ray_number,
 					+ (_sonar_end_point_rotation.x * sin_value)
 					+ (_sonar_end_point_rotation.y * cos_value);
 
+//			angle = atan2((_sonar_end_point.y - _sonar_start_point.y),
+//					(_sonar_end_point.x - _sonar_start_point.x));
+
 			//由点_sonar_start_point和点_sonar_end_point计算得到穿过两点的直线para_a*x + para_b*y + para_c
 			calculateline(_sonar_start_point, _sonar_end_point, para_a, para_b,
 					para_c);
 
 			_distance_theory_temp = 10;
 
-			for (int k = 1; k < map_point_number; k++) {
+			for (int k = 1; k < MAP_NUMBER_SET; k++) {
 
 				_map_start_point.x = _map_test.x[k - 1]; //the start point of map line
 				_map_start_point.y = _map_test.y[k - 1]; //the start point of map line
@@ -279,6 +340,9 @@ void sonar_value_minimum(int sonar_number, int sonar_ray_number,
 					Intersection(_sonar_start_point, _sonar_end_point,
 							_map_start_point, _map_end_point,
 							_intersection_point);
+//					Intersection(_sonar_start_point, _sonar_end_point, angle,
+//							_map_start_point, _map_end_point,
+//							_intersection_point, _distance_theory_temp);
 				}
 				// for calculate the distance between the intersection point and the estimation point(the sonar model origin)
 				if (((int) _intersection_point.x == 1000)
@@ -307,12 +371,22 @@ void sonar_value_minimum(int sonar_number, int sonar_ray_number,
 						sonar_map_label(i, 9) = _map_end_point.y;//第k条地图线段结束位置Y坐标
 
 						_distance_theory[i] = _distance_theory_temp;
+
+						float dy = _sonar_end_point.y - _sonar_start_point.y;
+						float dx = _sonar_end_point.x - _sonar_start_point.x;
+
+						ray_angle[i] = atan2(dy, dx) * (180 / PI);
+						if (dx < 0 && dy < 0) {
+							ray_angle[i] += 360;
+						} else if (dx > 0 && dy < 0) {
+							ray_angle[i] += 360;
+						}
+						wall_angle[i] = Wall_Angle[k - 1] * (float) (180 / PI);
+//						break;
 					}
 				}
-
-				usleep(2);												//用于线程调度
-
 			}
+			usleep(2);
 		}
 	}
 	// store the minimum distance in distance_theory_minimum
@@ -322,198 +396,210 @@ void sonar_value_minimum(int sonar_number, int sonar_ray_number,
 	distance_theory_minimum(3, 0) = _distance_theory[3];
 }
 
-//三角几何计算梯度方法
-void Jacobi_function_geometry(math::Matrix<4, 10> sonar_map_label,
-		math::Matrix<6, 2> &jacobian_array_geometry) {
+void caculateJacobi(math::Matrix<4, 1> &sonarTheory, float rayAngle[],
+		float wallAngle[], math::Matrix<4, 4> &h) {
 
-	float distance_horizontal;						//用于表示水平距离
-	float distance_verticle;						//用于表示垂直距离
-
-	math::Matrix<6, 2> jacobian_array_temp;
-	math::Matrix<4, 2> sonar_map_angle;				//用于存放超声波射线与X轴夹角和地图线段与X轴夹角
-	//前2×2与Jacobi_function中前2×2相同，都是估计位置的偏导
-	jacobian_array_temp(0, 0) = LAMBDA_1_SQRTF;
-	jacobian_array_temp(1, 1) = LAMBDA_1_SQRTF;
-	jacobian_array_temp(0, 1) = 0;
-	jacobian_array_temp(1, 0) = 0;
+	for (int i = 0; i < 4; i++)
+		for (int j = 0; j < 4; j++)
+			h(i, j) = 0;
 
 	for (int i = 0; i < 4; i++) {
-		//如果sonar_map_label(i, 0)的值为-1，即第i个超声波与所有地图线段均无交点，则跳过计算
-		if (fabs(sonar_map_label(i, 0) + 1) < 1e-4) {
-
-		} else {
-			//超声波与墙面相交的射线结束点X坐标与发射点X坐标之差
-			distance_horizontal = sonar_map_label(i, 3) - sonar_map_label(i, 1);
-			//超声波与墙面相交的射线结束点Y坐标与发射点Y坐标之差
-			distance_verticle = sonar_map_label(i, 4) - sonar_map_label(i, 2);
-			//超声波射线的斜率
-			sonar_map_angle(i, 0) = atan2f(distance_verticle,
-					distance_horizontal);
-			//与超声波射线相交的地图线段的结束点X坐标与起始点X坐标之差
-			distance_horizontal = sonar_map_label(i, 8) - sonar_map_label(i, 6);
-			//与超声波射线相交的地图线段的结束点Y坐标与起始点Y坐标之差
-			distance_verticle = sonar_map_label(i, 9) - sonar_map_label(i, 7);
-			//地图线段的斜率
-			sonar_map_angle(i, 1) = atan2f(distance_verticle,
-					distance_horizontal);
+		if (fabs(sonarTheory(i, 0) - 7) > 0.001) {
+			h(i, 0) = -sin(wallAngle[i] * (float) (PI / 180))
+					/ sin((wallAngle[i] - rayAngle[i]) * (float) (PI / 180));
+			h(i, 2) = cos(wallAngle[i] * (float) (PI / 180))
+					/ sin((wallAngle[i] - rayAngle[i]) * (float) (PI / 180));
 		}
 	}
-
-	for (int i = 0; i < 4; i++) {
-		if (fabs(sonar_map_label(i, 0) + 1) < 1e-4) {
-			//如果sonar_map_label(i, 0)的值为-1，即第i个超声波与所有地图线段均无交点，则相应位置偏导直接赋0
-			jacobian_array_temp(i + 2, 0) = 0;
-			jacobian_array_temp(i + 2, 1) = 0;
-		} else {
-			/*
-			 本室内定位算法X轴水平指向右，Y轴竖直指向上；
-			 设定从X轴逆时针出发与第i个超声波模型的射线夹角为theta_i；
-			 从X轴逆时针出发与第j条地图线段夹角为phi_j；
-			 当超声波射线与地图线段没有交点时，则相应位置偏导取值为0；
-			 当超声波射线与地图线段有交点时，可得对应位置偏导求取公式为：
-			 delta_x = sin(phi_j)/sin(theta_i - phi_j);
-			 delta_y = - cos(phi_j)/sin(theta_i - phi_j);
-			 */
-			//具体到本定位算法，由于涉及到调参，所以还需要乘上lambda_2_sqrtf
-			jacobian_array_temp(i + 2, 0) = LAMBDA_2_SQRTF
-					* (float) sin(sonar_map_angle(i, 1))
-					/ (float) sin(
-							sonar_map_angle(i, 0) - sonar_map_angle(i, 1));
-
-			jacobian_array_temp(i + 2, 1) = -LAMBDA_2_SQRTF
-					* (float) cos(sonar_map_angle(i, 1))
-					/ (float) sin(
-							sonar_map_angle(i, 0) - sonar_map_angle(i, 1));
-		}
-	}
-	jacobian_array_geometry = jacobian_array_temp;
 }
 
+void ctrlStateUpdate(bool& updated) {
+	math::Matrix<3, 3> _R; 			// rotation matrix from attitude quaternions
+	orb_check(_ctrl_state_sub, &updated);
+	if (updated) {
+		orb_copy(ORB_ID(control_state), _ctrl_state_sub, &sensor);
+		math::Quaternion q_att(sensor.q[0], sensor.q[1], sensor.q[2],
+				sensor.q[3]);
+		_R = q_att.to_dcm();
+		math::Vector<3> euler_angles;
+		euler_angles = _R.to_euler();
+		_yaw = euler_angles(2);		// the 3rd element of eulerian angle is yaw
+//		ATT = euler_angles;
+//		ATT = ATT*(180/PI);
+	}
+}
+
+void distanceSensorUpdate(bool& updated) {
+	orb_check(_distance_sensor_sub, &updated);
+	if (updated) {
+		orb_copy(ORB_ID(distance_sensor), _distance_sensor_sub, &distance);
+	}
+}
 //任务主函数
 int task_main(int argc, char *argv[]) {
 	usleep(1000);
 	warnx("mc_localization_EKF is successful!\n");
 	//线程启动标志
 	task_running = true;
-
 	warnx("mc_localization_EKF start successfully\n");
 
-// Load the prior map，加载地图模型
+	//rc_channels
+	//orb_subscribe(ORB_ID(rc_channels));
+	_ctrl_state_sub = orb_subscribe(ORB_ID(control_state)); // subscribe the control state
+//	_distance_sensor_sub = orb_subscribe(ORB_ID(distance_sensor)); // subscribe sonar data
+	struct ekf_localization_s mav_position;
+	orb_advert_t ekf_localization_pub = orb_advertise(ORB_ID(ekf_localization),
+			&mav_position);
 
-	if (MAP_NUMBER_SET == 4) {
-		//4维的地图
-		auto map_data_boundary_x = std::initializer_list<float>(
-				{ 0.00, 6, 6, 0 });
-		std::copy(map_data_boundary_x.begin(), map_data_boundary_x.end(),
-				_map_test.x);
-		auto map_data_boundary_y = std::initializer_list<float>( { 0.00, 0.00,
-				7.5, 7.5 });
-		std::copy(map_data_boundary_y.begin(), map_data_boundary_y.end(),
-				_map_test.y);
-	}
-
-	if (MAP_NUMBER_SET == 13) {
-		//13维的地图
-		auto map_data_boundary_x = std::initializer_list<float>( { 0, 6.30,
-				6.30, 0, 0, -1.95, -1.95, -11, -11, -1.95, -1.95, 0, 0 });
-		std::copy(map_data_boundary_x.begin(), map_data_boundary_x.end(),
-				_map_test.x);
-
-		auto map_data_boundary_y = std::initializer_list<float>( { 0, 0, 7.26,
-				7.26, 14.26, 14.26, 5.23, 5.23, 2.03, 2.03, -7.00, -7.00, 0 });
-		std::copy(map_data_boundary_y.begin(), map_data_boundary_y.end(),
-				_map_test.y);
-	}
-
-	if (MAP_NUMBER_SET == 25) {
-		//25维的地图
-		auto map_data_boundary_x = std::initializer_list<float>( { 0, 6.30,
-				6.30, 0, 0, -1.95, -1.95, -11, -11, -9.75, -9.75, -8.60, -8.60,
-				-7.10, -7.10, -5.95, -5.95, -4.45, -4.45, -3.30, -3.30, -1.95,
-				-1.95, 0, 0 });
-		std::copy(map_data_boundary_x.begin(), map_data_boundary_x.end(),
-				_map_test.x);
-
-		auto map_data_boundary_y = std::initializer_list<float>( { 0, 0, 7.26,
-				7.26, 14.26, 14.26, 5.23, 5.23, 2.03, 2.03, 1.48, 1.48, 2.03,
-				2.03, 1.48, 1.48, 2.03, 2.03, 1.48, 1.48, 2.03, 2.03, -7.00,
-				-7.00, 0 });
-		std::copy(map_data_boundary_y.begin(), map_data_boundary_y.end(),
-				_map_test.y);
-	}
-
-// Load the srf01 sonar model，加载超声波射线模型
-
-	if (RAY_NUMBER_SET == 1) {
-		//1根射线模型
-		auto sonar_data_x = std::initializer_list<float>( { 6.00 });
-		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
-		auto sonar_data_y = std::initializer_list<float>( { 0.00 });
-		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
-	}
-
-	if (RAY_NUMBER_SET == 3) {
-		//3根射线模型
-		auto sonar_data_x = std::initializer_list<float>( { 1.00, 6.00, 1.00 });
-		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
-		auto sonar_data_y = std::initializer_list<float>( { -0.2, 0.00, 0.2 });
-		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
-	}
-
-	if (RAY_NUMBER_SET == 5) {
-		//5根射线模型
-		auto sonar_data_x = std::initializer_list<float>( { 1.00, 3.50, 6.00,
-				1.00, 3.50 });
-		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
-		auto sonar_data_y = std::initializer_list<float>( { -0.2, -0.1375, 0,
-				0.2, 0.1375 });
-		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
-	}
-
-	if (RAY_NUMBER_SET == 7) {
-		//7根射线模型
-		auto sonar_data_x = std::initializer_list<float>( { 1.00, 2.00, 3.50,
-				6.00, 1.00, 2.00, 3.50 });
-		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
-		auto sonar_data_y = std::initializer_list<float>( { -0.2, -0.135,
-				-0.1375, 0, 0.2, 0.135, 0.1375 });
-		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
-	}
-
-	if (RAY_NUMBER_SET == 21) {
-		//21根射线模型
-		auto sonar_data_x = std::initializer_list<float>( { 0.60, 1.00, 1.50,
-				2.00, 2.50, 3.00, 3.50, 4.00, 4.50, 5.00, 6.00, 0.60, 1.00,
-				1.50, 2.00, 2.50, 3.00, 3.50, 4.00, 4.50, 5.00 });
-		std::copy(sonar_data_x.begin(), sonar_data_x.end(), _sonar_model.x);
-
-		auto sonar_data_y = std::initializer_list<float>( { -0.015, -0.2, -0.19,
-				-0.135, -0.15, -0.1575, -0.1375, -0.03, -0.04, -0.005, 0, 0.015,
-				0.2, 0.19, 0.135, 0.15, 0.1575, 0.1375, 0.03, 0.04, 0.005 });
-		std::copy(sonar_data_y.begin(), sonar_data_y.end(), _sonar_model.y);
-	}
-	
-
-	_ctrl_state_sub = orb_subscribe(ORB_ID(control_state));  // subscribe the control state
-	_sonar_sub_fd = orb_subscribe(ORB_ID(sonar_distance));   // subscribe sonar data
 	// Initialize the estimation location
-	math::Matrix<2, 1> point_estimation;
-	point_estimation(0, 0) = POINT_ESTIMATION_X_SET;
-	point_estimation(1, 0) = POINT_ESTIMATION_Y_SET;
-	math::Matrix<2, 1> point_previous;
-	point_previous(0, 0) = POINT_PREVIOUS_X_SET;
-	point_previous(1, 0) = POINT_PREVIOUS_Y_SET;
-	math::Matrix<4, 1> sonarvalue_reality;
+	float sonar_ray_angle[4];
+	float sonar_wall_angle[4];
+	float T = 0.008f;		// imu sample
+	math::Matrix<4, 4> Jacobi;
 	math::Matrix<4, 10> sonar_map_label;
+
+	// position corrected
+	math::Matrix<4, 1> X;
+	X(0, 0) = 1.0f;
+	X(1, 0) = 0.0f;
+	X(2, 0) = 1.0f;
+	X(3, 0) = 0.0f;
+	// x_hat = A*x+B*u
+	math::Matrix<4, 1> X_hat;
+	X_hat.zero();
+	// state input
+	math::Matrix<2, 1> u;
+	math::Matrix<4, 4> A;
+	A.zero();
+	A(0, 0) = 1;
+	A(0, 1) = T;
+	A(1, 1) = 1;
+	A(2, 2) = 1;
+	A(2, 3) = T;
+	A(3, 3) = 1;
+
+	math::Matrix<4, 2> B;
+	B(0, 0) = T * T / 2;
+	B(0, 1) = 0;
+	B(1, 0) = T;
+	B(1, 1) = 0;
+	B(2, 0) = 0;
+	B(2, 1) = T * T / 2;
+	B(3, 0) = 0;
+	B(3, 1) = T;
+
+	math::Matrix<4, 4> P;		//var
+	P.identity();
+	P = P * 200;
+	math::Matrix<4, 4> P0;
+
+	math::Matrix<4, 4> Q;	// process noise
+	Q.zero();
+	Q(0, 0) = 1;
+	Q(1, 1) = 0.2f;
+	Q(2, 2) = 1;
+	Q(3, 3) = 0.2f;
+
+	math::Matrix<4, 4> R;	// process noise
+	R.identity();
+	R = R * 0.007f;
+
+	math::Matrix<4, 4> I;
+	I.identity();
+//
+	math::Matrix<4, 4> K;
+	K.zero();
+
+	math::Matrix<4, 1> sonar_measure;
+
+	math::Matrix<4, 1> sonarvalue_theory;
+
 	//任务循环
 	while (!task_should_exit) {
-		usleep(5000);
-		
-		
+
+		bool updated = true;
+		ctrlStateUpdate(updated);
+		if (updated) {
+			u(0, 0) = sensor.x_acc * (float) cos(_yaw)
+					+ sensor.y_acc * (float) sin(_yaw);
+			u(1, 0) = sensor.x_acc * (float) sin(_yaw)
+					- sensor.y_acc * (float) cos(_yaw);
+//			input(0, 0) = sensor.x_acc;
+//			input(1, 0) = sensor.y_acc;
+			// 1
+			X_hat = A * X + B * u;
+//			// 2
+			P0 = A * P * A.transposed() + Q;
+			distanceSensorUpdate(updated);
+			if (updated) {
+				for (int i = 0; i < 4; i++)
+					sonar_measure(i, 0) = distance.distance[i];
+
+				POINTF position_estimation(X_hat(0, 0), X_hat(2, 0));
+//			POINTF position_estimation = { 4, 3 };
+//			_yaw = 0 * (PI / 180);
+
+				sonar_value_minimum(position_estimation, _yaw, sonar_map_label,
+						sonarvalue_theory, sonar_ray_angle, sonar_wall_angle);
+
+				caculateJacobi(sonarvalue_theory, sonar_ray_angle,
+						sonar_wall_angle, Jacobi);
+
+				K = P0 * Jacobi.transposed()
+						* ((Jacobi * P0 * Jacobi.transposed() + R).inversed());
+				X = X_hat + K * (sonar_measure - sonarvalue_theory);
+				P = (I - K * Jacobi) * P0;
+			} else {
+				X = X_hat;
+				P = P0;
+			}
+			mav_position.x = X(0, 0);
+			mav_position.vx = X(1, 0);
+			mav_position.y = X(2, 0);
+			mav_position.vy = X(3, 0);
+
+//			mav_position.x = 1;
+//			mav_position.vx = 2;
+//			mav_position.y = 3;
+//			mav_position.vy = 4;
+
+			orb_publish(ORB_ID(ekf_localization), ekf_localization_pub,
+					&mav_position);
+		}
+
+		POINTF position_estimation = { 4, 3 };
+//		time1 = hrt_absolute_time() / 1000;
+		sonar_value_minimum(position_estimation, _yaw, sonar_map_label,
+				sonarvalue_theory, sonar_ray_angle, sonar_wall_angle);
+		caculateJacobi(sonarvalue_theory, sonar_ray_angle, sonar_wall_angle,
+				Jacobi);
+//		time2 = hrt_absolute_time() / 1000;
+//		dt = time2 - time1;
+
+//		 ----------------print---------------
+//		dist[0] = sonarvalue_theory(0, 0);
+//		dist[1] = sonarvalue_theory(1, 0);
+//		dist[2] = sonarvalue_theory(2, 0);
+//		dist[3] = sonarvalue_theory(3, 0);
+//		RAY[0] = sonar_ray_angle[0];
+//		RAY[1] = sonar_ray_angle[1];
+//		RAY[2] = sonar_ray_angle[2];
+//		RAY[3] = sonar_ray_angle[3];
+//		WALL[0] = sonar_wall_angle[0];
+//		WALL[1] = sonar_wall_angle[1];
+//		WALL[2] = sonar_wall_angle[2];
+//		WALL[3] = sonar_wall_angle[3];
+
+//		for(int i = 0;i<4;i++)
+//			for(int j=0;j<4;j++)
+//				H[i][j] = Jacobi(i, j);
+		//-----------------print---------------
+		usleep(10000);
 	}
 	//关闭线程，串口
 	warnx("pos_estimator_sonar_imu exiting.\n");
 	task_running = false;
+
 	return 0;
 }
 
@@ -528,8 +614,8 @@ int mc_localization_EKF_main(int argc, char *argv[]) {
 			return 0;
 		}
 		task_should_exit = false;
-		control_task = px4_task_spawn_cmd("mc_localization_EKF",
-				SCHED_DEFAULT, SCHED_PRIORITY_MAX - 5, 2000, task_main,
+		control_task = px4_task_spawn_cmd("mc_localization_EKF", SCHED_DEFAULT,
+		SCHED_PRIORITY_MAX - 5, 4000, task_main,
 				(argv) ? (char * const *) &argv[2] : (char * const *) NULL);
 		return (0);
 	}
@@ -541,7 +627,31 @@ int mc_localization_EKF_main(int argc, char *argv[]) {
 		if (task_running) {
 			warnx("[mc_localization_EKF] running");
 			while (1) {
-				warnx("==============press CTRL+C to abort==============");
+//				printf(
+//						"[EKF] dist[0] = %.2f, dist[1] = %.2f, dist[2] = %.2f, dist[3] = %.2f \n",
+//						dist[0], dist[1], dist[2], dist[3]);
+//				printf("[EKF] time = %lld \n", dt);
+//				printf("[EKF] ray_angle = %.2f, %.2f, %.2f %.2f \n",
+//						(double) RAY[0], (double) RAY[1], (double) RAY[2],
+//						(double) RAY[3]);
+//				printf("[EKF] wall_angle = %.2f, %.2f, %.2f %.2f \n",
+//						(double) WALL[0], (double) WALL[1], (double) WALL[2],
+//						(double) WALL[3]);
+//				printf("input = \n");
+//				input.print();
+//				printf("\n");
+//				printf("attitude = \n");
+//				ATT.print();
+//				printf("\n");
+//				printf("[EKF] H = \n");
+//				for (int i = 0; i < 4; i++) {
+//					for (int j = 0; j < 4; j++) {
+//						printf("%.2f  ", H[i][j]);
+//					}
+//					printf("\n");
+//				}
+				printf("\n");
+				printf("==============press CTRL+C to abort==============\n");
 				char c;
 				struct pollfd fds;
 				int ret;
@@ -555,7 +665,7 @@ int mc_localization_EKF_main(int argc, char *argv[]) {
 						break;
 					}
 				}
-				//usleep(700000);		//500ms
+				usleep(400000);		//500ms
 			}
 		} else {
 			warnx("[pos_estimator_sonar_imu]stopped");
@@ -575,29 +685,3 @@ static void usage(const char *reason) {
 	exit(1);
 }
 
-// This function aim to update the sonar data.If true then update;if false,keep the original value
-int sonar_data_update(bool force) {
-	bool updated;
-	orb_check(_sonar_sub_fd, &updated);
-	if (updated) {
-		orb_copy(ORB_ID(sonar_distance), _sonar_sub_fd, &sonar);
-	}
-	return OK;
-}
-
-// This function aim to update the sensor data.If true then update;if false,keep the original value
-int sensor_data_update(bool force) {
-	bool updated_controlstate;
-	orb_check(_ctrl_state_sub, &updated_controlstate);
-	if (updated_controlstate) {
-		orb_copy(ORB_ID(control_state), _ctrl_state_sub, &_ctrl_state);
-		/* get current rotation matrix and euler angles from control state quaternions */
-		math::Quaternion q_att(_ctrl_state.q[0], _ctrl_state.q[1],
-				_ctrl_state.q[2], _ctrl_state.q[3]);
-		_R = q_att.to_dcm();		// convert the quaternion to rotation matrix
-		math::Vector<3> euler_angles;		// aim to record the eulerian angle
-		euler_angles = _R.to_euler();// convert the rotation matrix to eulerian angle
-		_yaw = euler_angles(2);		// the 3rd element of eulerian angle is yaw
-	}
-	return OK;
-}

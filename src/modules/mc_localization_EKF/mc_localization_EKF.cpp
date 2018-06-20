@@ -1,7 +1,7 @@
 /*
  * This program aims to estimate the location of indoor UAV under the prior map,
  four mutually perpendicular srf01 sonars and IMU data.
- * @author Xqc
+ * @author sxq
  */
 
 //#include <algorithm>

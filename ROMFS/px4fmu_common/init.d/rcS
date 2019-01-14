@@ -619,7 +619,7 @@ then
 	# mb12xx sonar sensor
 	# if param compare SENS_EN_MB12XX 1
 	# then
-	#	mb12xx start
+		mb12xx start
 	# fi
 
 	# teraranger one tof sensor
@@ -960,3 +960,11 @@ mavlink start -r 20000 -m config -b 921600 -d /dev/ttyS2
 # mc_alt_estimator start
 # mavlink stream -r 50 -s SONARGROUP -u 14556
 # mc_localization_EKF start
+ 
+# ekf localization
+# if param compare MC_LOCALIZATION 1
+# then
+	mc_localization_EKF start
+# fi
+ 
+ tone_alarm stop

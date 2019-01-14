@@ -1320,30 +1320,52 @@ int position_estimator_inav_thread_main(int argc, char *argv[])
 
 
 			/* publish local position */
-			local_pos.xy_valid = can_estimate_xy;
-			local_pos.v_xy_valid = can_estimate_xy;
-			local_pos.xy_global = local_pos.xy_valid && use_gps_xy;
-			local_pos.z_global = local_pos.z_valid && use_gps_z;
-			local_pos.x = x_est[0];
-			local_pos.vx = x_est[1];
-			local_pos.y = y_est[0];
-			local_pos.vy = y_est[1];
-			local_pos.z = z_est[0];
-			local_pos.vz = z_est[1];
-			matrix::Eulerf euler(R);
-			local_pos.yaw = euler.psi();
-			local_pos.dist_bottom_valid = dist_bottom_valid;
-			local_pos.eph = eph;
-			local_pos.epv = epv;
+//			local_pos.xy_valid = can_estimate_xy;
+//			local_pos.v_xy_valid = can_estimate_xy;
+//			local_pos.xy_global = local_pos.xy_valid && use_gps_xy;
+//			local_pos.z_global = local_pos.z_valid && use_gps_z;
+//			local_pos.x = x_est[0];
+//			local_pos.vx = x_est[1];
+//			local_pos.y = y_est[0];
+//			local_pos.vy = y_est[1];
+//			local_pos.z = z_est[0];
+//			local_pos.vz = z_est[1];
+//			matrix::Eulerf euler(R);
+//			local_pos.yaw = euler.psi();
+//			local_pos.dist_bottom_valid = dist_bottom_valid;
+//			local_pos.eph = eph;
+//			local_pos.epv = epv;
 
 			if (local_pos.dist_bottom_valid) {
 				local_pos.dist_bottom = dist_ground;
 				local_pos.dist_bottom_rate = - z_est[1];
 			}
-
-			//local_pos.dist_bottom = 10;
 			local_pos.timestamp = t;
-			//local_pos.ref_alt=10;
+			//static float dx = 0.01f;
+			// sxq -------------
+			//dx += 0.01f;
+			local_pos.xy_valid = true;
+			local_pos.v_xy_valid = true;
+			local_pos.xy_global = true;
+			local_pos.z_global = true;
+			local_pos.x = 5;
+			local_pos.vx = 0.1f;
+			local_pos.y = 5;
+			local_pos.vy = 0.1f;
+			local_pos.z = 1;
+			local_pos.vz = 0.01f;
+			matrix::Eulerf euler(R);
+			local_pos.yaw = euler.psi();
+			local_pos.dist_bottom_valid = dist_bottom_valid;
+			local_pos.dist_bottom_valid = true;
+			local_pos.eph = eph;
+			local_pos.epv = epv;
+
+			local_pos.dist_bottom = 1.5f;
+			local_pos.dist_bottom_rate = - z_est[1];
+
+			local_pos.timestamp = t;
+			// sxq ---------------
 
 			orb_publish(ORB_ID(vehicle_local_position), vehicle_local_position_pub, &local_pos);
 

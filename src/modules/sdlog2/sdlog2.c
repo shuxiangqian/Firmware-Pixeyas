@@ -113,6 +113,7 @@
 #include <uORB/topics/cpuload.h>
 #include <uORB/topics/sonar_distance.h>
 #include <uORB/topics/alt_estimate.h>
+#include <uORB/topics/ekf_localization.h>
 //#include <uORB/topics/alt_ctrl.h>
 
 #include <systemlib/systemlib.h>
@@ -1232,7 +1233,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct vehicle_gps_position_s dual_gps_pos;
 		struct sonar_distance_s sonar;
 		struct alt_estimate_s alt;
-		//struct alt_ctrl_s alt_control;
+		struct ekf_localization_s mav_position;
 	} buf;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1296,6 +1297,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_LOAD_s log_LOAD;
 			struct log_ALT_s log_ALT;
 			struct log_ALT1_s log_ALT1;
+			struct log_EKFL_s log_EKFL;
 		} body;
 	} log_msg = {
 		LOG_PACKET_HEADER_INIT(0)
@@ -1347,6 +1349,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int cpuload_sub;
 		int sonar_sub;
 		int alt_sub;
+		int ekf_localization_sub;
 	//	int alt_ctrl_sub;
 	} subs;
 
@@ -1392,6 +1395,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.cpuload_sub = -1;
 	subs.sonar_sub = -1;		//sonar
 	subs.alt_sub = -1;
+	subs.ekf_localization_sub = -1;
 	//subs.alt_ctrl_sub = -1;
 
 	/* add new topics HERE */
@@ -2138,7 +2142,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 //				}
 //			}
 
-			/* --- DISTANCE SENSOR --- */
+			// by sxq 	DISTANCE SENSOR
 			if (copy_if_updated(ORB_ID(distance_sensor), &subs.distance_sensor_sub, &buf.distance_sensor)) {
 				log_msg.msg_type = LOG_DIST_MSG;
 //				log_msg.body.log_DIST.id = buf.distance_sensor.id;
@@ -2150,6 +2154,24 @@ int sdlog2_thread_main(int argc, char *argv[])
 				log_msg.body.log_DIST.distance[3] = buf.distance_sensor.distance[3];
 				//log_msg.body.log_DIST.covariance = buf.distance_sensor.covariance;
 				LOGBUFFER_WRITE_AND_COUNT(DIST);
+			}
+
+			// by sxq EKF localization
+			if(copy_if_updated(ORB_ID(ekf_localization), &subs.ekf_localization_sub, &buf.mav_position)){
+				log_msg.msg_type = LOG_EKFL_MSG;
+				log_msg.body.log_EKFL.x = buf.mav_position.x;
+				log_msg.body.log_EKFL.vx = buf.mav_position.vx;
+				log_msg.body.log_EKFL.y = buf.mav_position.y;
+				log_msg.body.log_EKFL.vx = buf.mav_position.vy;
+				log_msg.body.log_EKFL.distance1 = buf.mav_position.sonar_distance[0];
+				log_msg.body.log_EKFL.distance2 = buf.mav_position.sonar_distance[1];
+				log_msg.body.log_EKFL.distance3 = buf.mav_position.sonar_distance[2];
+				log_msg.body.log_EKFL.distance4 = buf.mav_position.sonar_distance[3];
+				log_msg.body.log_EKFL.acc_x = buf.mav_position.acc[0];
+				log_msg.body.log_EKFL.acc_y = buf.mav_position.acc[1];
+				log_msg.body.log_EKFL.yaw = buf.mav_position.yaw;
+				log_msg.body.log_EKFL.corrected = buf.mav_position.corrected;
+				LOGBUFFER_WRITE_AND_COUNT(EKFL);
 			}
 
 			/* --- ESTIMATOR STATUS --- */
@@ -2396,7 +2418,7 @@ void sdlog2_status()
 			//warnx("[SD] thrust=%.2f alt_sp=%.2f alt_now=%.2f count=%d",(double)thrust,(double)alt_sp,(double)alt_now,count);
 
 			warnx("============press CTRL+C to abort============");
-/*
+
 			char c;
 			struct pollfd fds;
 			int ret;
@@ -2411,7 +2433,7 @@ void sdlog2_status()
 					warnx("User abort\n");
 					break;
 				}
-			}	*/
+			}
 			usleep(600000);
 		}
 	}

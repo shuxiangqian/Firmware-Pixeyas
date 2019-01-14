@@ -94,12 +94,35 @@
 #define MIN_DIST		0.01f
 #define MANUAL_THROTTLE_MAX_MULTICOPTER	0.9f
 #define ONE_G	9.8066f
+// 以下变量用于调试打印变量
+//bool armed;
+//bool flag_manual_enabled;
+//bool flag_auto_enabled;
+//bool flag_offboard_enabled;
+//bool flag_rates_enabled;
+//bool flag_attitude_enabled;
+//bool flag_rattitude_enabled;
+//bool flag_force_enabled;
+//bool flag_acceleration_enabled;
+//bool flag_velocity_enabled;
+//bool flag_position_enabled;
+//bool flag_altitude_enabled;
+//bool flag_climb_rate_enabled;
+//bool flag_termination_enabled;
+//
+//double x;
+//double y;
+//double z;
+//double vx;
+//double vy;
+//double vz;
+//double yaw;
 
 float ref_height1,height1,mytest;
 int myflag=0;
 //float thrust1,alt_sp1,alt_now1;
-uint64_t time1,time2,time_cha;
-unsigned int count1=0;
+//uint64_t time1,time2,time_cha;
+//unsigned int count1=0;
 
 /**
  * Multicopter position control app start / stop handling function
@@ -702,6 +725,20 @@ MulticopterPositionControl::poll_subscriptions()
 
 	if (updated) {
 		orb_copy(ORB_ID(vehicle_control_mode), _control_mode_sub, &_control_mode);
+//		armed = _control_mode.flag_armed;
+//		flag_manual_enabled = _control_mode.flag_control_manual_enabled;
+//		flag_auto_enabled = _control_mode.flag_control_auto_enabled;
+//		flag_offboard_enabled = _control_mode.flag_control_offboard_enabled;
+//		flag_rates_enabled = _control_mode.flag_control_rates_enabled;
+//		flag_attitude_enabled = _control_mode.flag_control_attitude_enabled;
+//		flag_rattitude_enabled = _control_mode.flag_control_rattitude_enabled;
+//		flag_force_enabled = _control_mode.flag_control_force_enabled;
+//		flag_acceleration_enabled = _control_mode.flag_control_acceleration_enabled;
+//		flag_velocity_enabled = _control_mode.flag_control_velocity_enabled;
+//		flag_position_enabled = _control_mode.flag_control_position_enabled;
+//		flag_altitude_enabled = _control_mode.flag_control_altitude_enabled;
+//		flag_climb_rate_enabled = _control_mode.flag_control_climb_rate_enabled;
+//		flag_termination_enabled = _control_mode.flag_control_termination_enabled;
 	}
 
 	orb_check(_manual_sub, &updated);
@@ -720,6 +757,13 @@ MulticopterPositionControl::poll_subscriptions()
 
 	if (updated) {
 		orb_copy(ORB_ID(vehicle_local_position), _local_pos_sub, &_local_pos);
+//		x = _local_pos.x;
+//		y = _local_pos.y;
+//		z = _local_pos.z;
+//		vx = _local_pos.vx;
+//		vy = _local_pos.vy;
+//		vz = _local_pos.vz;
+//		yaw = _local_pos.yaw;
 	}
 
 	/*
@@ -1605,11 +1649,11 @@ MulticopterPositionControl::task_main()
 	/*
 	 * do subscriptions
 	 */
-	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
-	_vehicle_land_detected_sub = orb_subscribe(ORB_ID(vehicle_land_detected));
-	_ctrl_state_sub = orb_subscribe(ORB_ID(control_state));
+	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));				// 状态：导航、rc、任务
+	_vehicle_land_detected_sub = orb_subscribe(ORB_ID(vehicle_land_detected));	// 是否降落
+	_ctrl_state_sub = orb_subscribe(ORB_ID(control_state));						// 三轴位置、速度、加速度，角速度
 	_att_sp_sub = orb_subscribe(ORB_ID(vehicle_attitude_setpoint));
-	_control_mode_sub = orb_subscribe(ORB_ID(vehicle_control_mode));
+	_control_mode_sub = orb_subscribe(ORB_ID(vehicle_control_mode));			// 各种标志位
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
 	_manual_sub = orb_subscribe(ORB_ID(manual_control_setpoint));
 	_arming_sub = orb_subscribe(ORB_ID(actuator_armed));
@@ -2654,7 +2698,7 @@ int mc_pos_control_main(int argc, char *argv[])
 						orb_copy(ORB_ID(vehicle_rates_setpoint), v_rates_sp_sub, &v_rates_sp);
 
 						//warnx("PID: [P=%.3f,I=%.3f,D=%.3f]", (double)P,(double)I,(double)D);
-						warnx("Debug:time=%lld count=%d",time_cha,count1);
+//						warnx("Debug:time=%lld count=%d",time_cha,count1);
 						//warnx("publish_count=%d",publish_count);
 						//warnx("thrust=%.2f alt_sp=%.2f alt_now=%.2f",(double)thrust1,(double)alt_sp1,(double)alt_now1);
 						warnx("Alt:ref_height=%.2f,height=%.2f",(double)ref_height1,(double)height1);
@@ -2663,6 +2707,27 @@ int mc_pos_control_main(int argc, char *argv[])
 						//warnx("Position:x=%.2f,y=%.2f,z=%.2f",(double)position.x,(double)position.y,(double)position.z);
 						//warnx("Position:ref_z=%.2f",(double)position.ref_alt);
 						warnx("att_sp:thrust=%.2f   rates_thrust_sp=%.2f",(double)v_att_sp.thrust,(double)v_rates_sp.thrust);
+//						printf("[flag] arm = %d \n",armed);
+//						printf("[flag] flag_manual_enabled = %d \n",flag_manual_enabled);
+//						printf("[flag] flag_auto_enabled = %d \n",flag_auto_enabled);
+//						printf("[flag] flag_offboard_enabled = %d \n",flag_offboard_enabled);
+//						printf("[flag] flag_rates_enabled = %d \n",flag_rates_enabled);
+//						printf("[flag] flag_attitude_enabled = %d \n",flag_attitude_enabled);
+//						printf("[flag] flag_rattitude_enabled = %d \n",flag_rattitude_enabled);
+//						printf("[flag] flag_force_enabled = %d \n",flag_force_enabled);
+//						printf("[flag] flag_acceleration_enabled = %d \n",flag_acceleration_enabled);
+//						printf("[flag] flag_velocity_enabled = %d \n",flag_velocity_enabled);
+//						printf("[flag] flag_position_enabled = %d \n",flag_position_enabled);
+//						printf("[flag] flag_altitude_enabled = %d \n",flag_altitude_enabled);
+//						printf("[flag] flag_climb_rate_enabled = %d \n",flag_climb_rate_enabled);
+//						printf("[flag] flag_termination_enabled = %d \n",flag_termination_enabled);
+//						printf("[estimate] x = %.2f \n",x);
+//						printf("[estimate] y = %.2f \n",y);
+//						printf("[estimate] z = %.2f \n",z);
+//						printf("[estimate] vx = %.2f \n",vx);
+//						printf("[estimate] vy = %.2f \n",vy);
+//						printf("[estimate] vz = %.2f \n",vz);
+//						printf("[estimate] yaw = %.2f \n",yaw);
 						//printf("flag_auto=%d\n",flag_auto);
 						warnx("yaokongqi：%.2f",(double)mytest);
 						warnx("flag=%d",(int)myflag);

@@ -538,7 +538,7 @@ int MB12XX::collect(uint8_t index_count_) {
 	int ret = -EIO;
 
 	//static uint64_t count0 = 0,count1 = 0;
-	static uint64_t count0 = 0;
+//	static uint64_t count0 = 0;
 
 	/* read from the sensor */
 	uint8_t val[2] = { 0, 0 };
@@ -571,25 +571,25 @@ int MB12XX::collect(uint8_t index_count_) {
 		//report.current_distance = distance_m;
 		report.distance[0] = distance_m;
 		/* publish it, if we are the primary */
-		if (_distance_sensor_topic0 != nullptr) {
-			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
-					&report);
-		}
+//		if (_distance_sensor_topic0 != nullptr) {
+//			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+//					&report);
+//		}
 	} else if ((MB12XX_BASEADDR - index_count_) == 1) {
 		report.distance[1] = distance_m;
-		if (_distance_sensor_topic0 != nullptr) {
-			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
-					&report);
-		}
+//		if (_distance_sensor_topic0 != nullptr) {
+//			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+//					&report);
+//		}
 	} else if ((MB12XX_BASEADDR - index_count_) == 2) {
 		report.distance[2] = distance_m;
-		if (_distance_sensor_topic0 != nullptr) {
-			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
-					&report);
-		}
+//		if (_distance_sensor_topic0 != nullptr) {
+//			orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic0,
+//					&report);
+//		}
 	} else if ((MB12XX_BASEADDR - index_count_) == 3) {
-		count0++;
-		report.count = count0;
+//		count0++;
+//		report.count = count0;
 		report.distance[3] = distance_m;
 		//report.current_distance[1] = distance_m;
 //		/* publish it, if we are the primary */

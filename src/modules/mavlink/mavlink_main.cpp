@@ -88,6 +88,9 @@
 #include "mavlink_receiver.h"
 #include "mavlink_rate_limiter.h"
 
+
+//bool geneRC;
+//double MAN_Z;
 #ifndef MAVLINK_CRC_EXTRA
 #error MAVLINK_CRC_EXTRA has to be defined on PX4 systems
 #endif
@@ -471,6 +474,8 @@ Mavlink::get_status_all_instances()
 		iterations++;
 	}
 
+//	printf("_generate_rc = %d\n",geneRC);
+//	printf("man.z = %.2f\n",MAN_Z);
 	/* return an error if there are no instances */
 	return (iterations == 0);
 }

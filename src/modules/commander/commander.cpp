@@ -854,11 +854,24 @@ bool handle_command(struct vehicle_status_s *status_local, const struct safety_s
 					}
 
 					// Refuse to arm if in manual with non-zero throttle
+					// px4
+//					if (cmd_arms
+//						&& (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
+//						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_STAB
+//						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO)
+//						&& (sp_man.z > 0.1f)) {
+//
+//						mavlink_log_critical(&mavlink_log_pub, "Arming DENIED. Manual throttle non-zero.");
+//						cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_DENIED;
+//						break;
+//					}
+
+					// by sxq
 					if (cmd_arms
 						&& (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
 						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_STAB
 						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO)
-						&& (sp_man.z > 0.1f)) {
+						&& (sp_man.z > 0.18f)) {
 
 						mavlink_log_critical(&mavlink_log_pub, "Arming DENIED. Manual throttle non-zero.");
 						cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_DENIED;
@@ -3065,15 +3078,20 @@ control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actu
 			set_normal_color = false;
 
 		} else if (status_local->arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
-			rgbled_set_mode(RGBLED_MODE_ON);
+//			rgbled_set_mode(RGBLED_MODE_ON);
+//			rgbled_set_mode(RGBLED_MODE_BLINK_SLOW);	// sxq
+			rgbled_set_mode(RGBLED_MODE_OFF);			// sxq
 			set_normal_color = true;
 
 		} else if (status_local->arming_state == vehicle_status_s::ARMING_STATE_ARMED_ERROR || (!status_flags.condition_system_sensors_initialized && hotplug_timeout)) {
-			rgbled_set_mode(RGBLED_MODE_BLINK_FAST);	// FAST
+			//rgbled_set_mode(RGBLED_MODE_BLINK_FAST);	// FAST
+			rgbled_set_mode(RGBLED_MODE_BLINK_SLOW);
 			rgbled_set_color(RGBLED_COLOR_RED);
 
 		} else if (status_local->arming_state == vehicle_status_s::ARMING_STATE_STANDBY) {
-			rgbled_set_mode(RGBLED_MODE_BREATHE);
+//			rgbled_set_mode(RGBLED_MODE_BREATHE);
+			rgbled_set_mode(RGBLED_MODE_OFF);	// sxq
+//			rgbled_set_mode(RGBLED_MODE_BLINK_SLOW);	// sxq
 			set_normal_color = true;
 
 		} else if (!status_flags.condition_system_sensors_initialized && !hotplug_timeout) {

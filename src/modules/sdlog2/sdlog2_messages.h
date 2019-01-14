@@ -658,6 +658,23 @@ struct log_ALT1_s
 	bool flag;
 };
 
+#define LOG_EKFL_MSG 64		// ekf localization
+struct log_EKFL_s
+{
+	float x;
+	float vx;
+	float y;
+	float vy;
+	float distance1;
+	float distance2;
+	float distance3;
+	float distance4;
+	float acc_x;
+	float acc_y;
+	float yaw;
+	uint8_t corrected;
+};
+
 /********** SYSTEM MESSAGES, ID > 0x80 **********/
 
 /* --- TIME - TIME STAMP --- */
@@ -750,6 +767,7 @@ static const struct log_format_s log_formats[] = {
 	//LOG_FORMAT(ALT, "fff","alt_sp,alt_now,thrust"),
 	LOG_FORMAT(ALT, "ffffff","alt0,alt1,alt2,alt3,alt4,altF"),
 	LOG_FORMAT(ALT1, "ffB","alt,vel_z,state"),
+	LOG_FORMAT(EKFL, "fffffffffffB","x,vx,y,vy,dist1,dist2,dist3,dist4,accX,accY,flag,yaw"),
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */
 	LOG_FORMAT(TIME, "Q", "StartTime"),

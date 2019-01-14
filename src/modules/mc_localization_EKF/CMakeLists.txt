@@ -33,7 +33,7 @@
 px4_add_module(
 	MODULE modules__mc_localization_EKF
 	MAIN mc_localization_EKF
-	STACK_MAIN 2000
+	STACK_MAIN 5000
 	SRCS
 		mc_localization_EKF.cpp
 	DEPENDS

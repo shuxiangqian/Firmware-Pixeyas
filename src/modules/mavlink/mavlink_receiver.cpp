@@ -1349,17 +1349,24 @@ MavlinkReceiver::handle_message_rc_channels_override(mavlink_message_t *msg)
 	}
 }
 
+//extern bool geneRC;
+//extern double MAN_Z;
+
 void
 MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 {
 	mavlink_manual_control_t man;
 	mavlink_msg_manual_control_decode(msg, &man);
 
+//	MAN_Z = man.z;
+
 	// Check target
 	if (man.target != 0 && man.target != _mavlink->get_system_id()) {
 		return;
 	}
 
+//	_mavlink->get_manual_input_mode_generation();
+//	geneRC = _mavlink;
 	if (_mavlink->get_manual_input_mode_generation()) {
 
 		struct rc_input_values rc = {};
@@ -1384,6 +1391,7 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 		/* throttle */
 		//rc.values[3] =1502;
 		rc.values[3] = fminf(fmaxf(man.z / 0.9f + 800, 1000.0f), 2000.0f);
+//		rc.values[3] = man.z / 2 + 1500;
 
 		/* decode all switches which fit into the channel mask */
 		unsigned max_switch = (sizeof(man.buttons) * 8);
@@ -1416,8 +1424,8 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 		manual.y = man.y / 1000.0f;
 		//manual.y=0.34f;
 		manual.r = man.r / 1000.0f;
-		manual.z = 0.4f;
-		//manual.z = man.z / 1000.0f;
+//		manual.z = 0.4f;
+		manual.z = man.z / 1000.0f;
 
 		if (_manual_pub == nullptr) {
 			_manual_pub = orb_advertise(ORB_ID(manual_control_setpoint), &manual);

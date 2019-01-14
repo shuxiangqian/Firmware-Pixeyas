@@ -3110,6 +3110,16 @@ PARAM_DEFINE_INT32(SENS_EN_SF0X, 0);
 PARAM_DEFINE_INT32(SENS_EN_MB12XX, 0);
 
 /**
+ * localization enable
+ *
+ * @reboot_required true
+ *
+ * @boolean
+ * @group Sensor Enable
+ */
+PARAM_DEFINE_INT32(MC_LOCALIZATION, 0);
+
+/**
  * TeraRanger One (trone)
  *
  * @reboot_required true
@@ -3258,3 +3268,5 @@ PARAM_DEFINE_INT32(PWM_AUX_DISARMED, 1000);
  * @group PWM Outputs
  */
 PARAM_DEFINE_FLOAT(MOT_SLEW_MAX, 0.0f);
+
+
